@@ -1,6 +1,6 @@
 # Obsidian Accounting Plugin
 
-A powerful [Beancount](https://beancount.github.io/docs/) integration for Obsidian, allowing you to manage your personal finances, track expenses, and view interactive dashboards directly within your vault.
+A simple [Beancount](https://beancount.github.io/docs/) integration for Obsidian, allowing you to manage your personal finances, track expenses, and view interactive dashboards directly within your vault.
 
 ## Features
 

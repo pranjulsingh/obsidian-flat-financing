@@ -3,8 +3,8 @@
 	"name": "Obsidian Accounting",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Beancount integration for Obsidian. Add accounts and transactions easily.",
-	"author": "Antigravity",
+	"description": "Beancount integration for Obsidian. Add accounts and transactions easily and get the summary and transactions in the dashboard.",
+	"author": "Pranjul",
 	"authorUrl": "",
 	"isDesktopOnly": false
 }

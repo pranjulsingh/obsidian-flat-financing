@@ -1,6 +1,7 @@
 import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
+import fs from "fs";
 
 const banner =
     `/*
@@ -10,6 +11,24 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
+
+const copyStaticFilesPlugin = {
+    name: 'copy-static-files',
+    setup(build) {
+        build.onEnd(() => {
+            try {
+                if (!fs.existsSync("dist")) {
+                    fs.mkdirSync("dist");
+                }
+                fs.copyFileSync("src/styles.css", "dist/styles.css");
+                fs.copyFileSync("manifest.json", "dist/manifest.json");
+                console.log("[copy-static-files] Copied styles.css and manifest.json to dist/");
+            } catch (e) {
+                console.error("[copy-static-files] Failed to copy files:", e);
+            }
+        });
+    },
+};
 
 const context = await esbuild.context({
     banner: {
@@ -47,7 +66,8 @@ const context = await esbuild.context({
     logLevel: "info",
     sourcemap: prod ? false : "inline",
     treeShaking: true,
-    outfile: "main.js",
+    outfile: "dist/main.js",
+    plugins: [copyStaticFilesPlugin],
 });
 
 if (prod) {

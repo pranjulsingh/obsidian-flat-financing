@@ -5,8 +5,8 @@ import { FileUtils } from "./file_utils";
 import { AccountingDashboardView, DASHBOARD_VIEW_TYPE } from "./dashboard";
 
 export default class ObsidianAccountingPlugin extends Plugin {
-    settings: AccountingPluginSettings;
-    fileUtils: FileUtils;
+    settings!: AccountingPluginSettings;
+    fileUtils!: FileUtils;
 
     async onload() {
         await this.loadSettings();

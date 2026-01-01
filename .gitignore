@@ -5,10 +5,7 @@ node_modules/
 .DS_Store
 Thumbs.db
 
-# Build Artifacts
-main.js
-tests/*.js
-
 # IDE Configuration
 .vscode/
 .idea/
+dist/
