@@ -1,5 +1,5 @@
 
-import { Ledger } from '../ledger';
+import { Ledger } from '../src/ledger';
 
 // --- Test Runner Helpers ---
 let passed = 0;

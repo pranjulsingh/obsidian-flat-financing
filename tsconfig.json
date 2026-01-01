@@ -12,6 +12,6 @@
         "isolatedModules": true
     },
     "include": [
-        "**/*.ts"
+        "src/**/*.ts"
     ]
 }
