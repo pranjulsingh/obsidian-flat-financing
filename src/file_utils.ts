@@ -3,18 +3,31 @@ import { App, TFile, Notice } from "obsidian";
 export class FileUtils {
     constructor(private app: App) { }
 
-    async appendToBeancountFile(path: string, content: string): Promise<boolean> {
+    async ensureFileExists(path: string): Promise<boolean> {
         const file = this.app.vault.getAbstractFileByPath(path);
-
-        if (!file) {
-            new Notice(`Beancount file not found at path: ${path}`);
+        if (file) {
+            if (file instanceof TFile) return true;
+            new Notice(`Path exists but is not a file: ${path}`);
             return false;
         }
 
-        if (!(file instanceof TFile)) {
-            new Notice(`Path is not a file: ${path}`);
+        // File does not exist, create it
+        try {
+            await this.app.vault.create(path, "; Created by Obsidian Flat Financing Plugin\n");
+            new Notice(`Created new Beancount file at: ${path}`);
+            return true;
+        } catch (error) {
+            console.error(`Error creating file at ${path}:`, error);
+            new Notice(`Failed to create Beancount file at ${path}`);
             return false;
         }
+    }
+
+    async appendToBeancountFile(path: string, content: string): Promise<boolean> {
+        if (!await this.ensureFileExists(path)) return false;
+
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (!(file instanceof TFile)) return false;
 
         try {
             await this.app.vault.append(file, "\n" + content);
@@ -27,11 +40,10 @@ export class FileUtils {
     }
 
     async getBeanCountFile(path: string): Promise<TFile | null> {
+        if (!await this.ensureFileExists(path)) return null;
+
         const file = this.app.vault.getAbstractFileByPath(path);
-        if (file instanceof TFile) {
-            return file;
-        }
-        return null;
+        return file instanceof TFile ? file : null;
     }
 
     async getFileContent(path: string): Promise<string> {
@@ -43,6 +55,9 @@ export class FileUtils {
     }
 
     async getAccounts(path: string): Promise<string[]> {
+        // ensure existence so we don't get errors on empty fresh install
+        await this.ensureFileExists(path);
+
         const content = await this.getFileContent(path);
         const accounts = new Set<string>();
         const lines = content.split("\n");
@@ -60,3 +75,4 @@ export class FileUtils {
         return Array.from(accounts).sort();
     }
 }
+
