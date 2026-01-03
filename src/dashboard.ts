@@ -1,6 +1,6 @@
 import { ItemView, WorkspaceLeaf, Setting, ButtonComponent } from "obsidian";
 import ObsidianAccountingPlugin from "./main";
-import { Ledger, BalanceResult } from "./ledger";
+import { Ledger } from "./ledger";
 import { AccountSuggest } from "./suggester";
 
 export const DASHBOARD_VIEW_TYPE = "obsidian-accounting-dashboard";
@@ -55,110 +55,100 @@ export class AccountingDashboardView extends ItemView {
             this.ledger.parse(content);
         }
 
-        container.createEl("h2", { text: "Accounting Dashboard" });
+        new Setting(container)
+            .setName("Accounting Dashboard")
+            .setHeading();
 
         // Tab Buttons
-        const tabContainer = container.createEl("div", { cls: "accounting-dashboard-tabs" });
-        tabContainer.style.display = "flex";
-        tabContainer.style.borderBottom = "1px solid var(--background-modifier-border)";
-        tabContainer.style.marginBottom = "15px";
+        const tabContainer = container.createEl("div");
+        tabContainer.addClass("accounting-dashboard-tabs");
 
-        const summaryTab = tabContainer.createEl("div", { text: "Summary", cls: "nav-button" });
-        summaryTab.style.padding = "10px 20px";
-        summaryTab.style.cursor = "pointer";
-        summaryTab.style.fontWeight = this.activeTab === 'summary' ? 'bold' : 'normal';
-        summaryTab.style.borderBottom = this.activeTab === 'summary' ? '2px solid var(--interactive-accent)' : 'none';
-        summaryTab.onclick = () => { this.activeTab = 'summary'; this.refresh(); };
+        const summaryTab = tabContainer.createEl("div", { text: "Summary" });
+        summaryTab.addClass("accounting-tab-button");
+        if (this.activeTab === 'summary') summaryTab.addClass("active");
 
-        const transactionsTab = tabContainer.createEl("div", { text: "Transactions", cls: "nav-button" });
-        transactionsTab.style.padding = "10px 20px";
-        transactionsTab.style.cursor = "pointer";
-        transactionsTab.style.fontWeight = this.activeTab === 'transactions' ? 'bold' : 'normal';
-        transactionsTab.style.borderBottom = this.activeTab === 'transactions' ? '2px solid var(--interactive-accent)' : 'none';
-        transactionsTab.onclick = () => { this.activeTab = 'transactions'; this.refresh(); };
+        summaryTab.onclick = () => {
+            this.activeTab = 'summary';
+            void this.refresh();
+        };
+
+        const transactionsTab = tabContainer.createEl("div", { text: "Transactions" });
+        transactionsTab.addClass("accounting-tab-button");
+        if (this.activeTab === 'transactions') transactionsTab.addClass("active");
+
+        transactionsTab.onclick = () => {
+            this.activeTab = 'transactions';
+            void this.refresh();
+        };
 
 
         // Controls Container
-        const controls = container.createEl("div", { cls: "accounting-dashboard-controls" });
-        controls.style.display = "flex";
-        controls.style.flexDirection = "column";
-        controls.style.gap = "10px";
-        controls.style.marginBottom = "20px";
-        controls.style.padding = "10px";
-        controls.style.border = "1px solid var(--background-modifier-border)";
-        controls.style.borderRadius = "5px";
+        const controls = container.createEl("div");
+        controls.addClass("accounting-dashboard-controls");
 
         // Date Row (Shared)
         const dateRow = controls.createEl("div");
-        dateRow.style.display = "flex";
-        dateRow.style.gap = "20px";
-        dateRow.style.alignItems = "center";
+        dateRow.addClass("accounting-row");
 
         new Setting(dateRow)
-            .setName("Start Date")
+            .setName("Start date")
             .addText(text => {
                 text.inputEl.type = "date";
                 text.setValue(this.startDate)
-                    .onChange(async (val) => {
+                    .onChange((val) => {
                         this.startDate = val;
-                        await this.renderCurrentView(container);
+                        this.renderCurrentView(container);
                     })
             });
 
         new Setting(dateRow)
-            .setName("End Date")
+            .setName("End date")
             .addText(text => {
                 text.inputEl.type = "date";
                 text.setValue(this.endDate)
-                    .onChange(async (val) => {
+                    .onChange((val) => {
                         this.endDate = val;
-                        await this.renderCurrentView(container);
+                        this.renderCurrentView(container);
                     })
             });
 
         new Setting(dateRow)
             .addButton(btn => btn
-                .setButtonText("Refresh Data")
-                .onClick(async () => {
-                    await this.refresh(); // Full refresh
+                .setButtonText("Refresh data")
+                .onClick(() => {
+                    void this.refresh(); // Full refresh
                 }));
 
         // --- SUMMARY TAB FILTERS ---
         if (this.activeTab === 'summary') {
             // Type Filters Row
             const typeRow = controls.createEl("div");
-            typeRow.style.display = "flex";
-            typeRow.style.gap = "15px";
-            typeRow.style.alignItems = "center";
+            typeRow.addClass("accounting-filter-row");
 
             const typeLabel = typeRow.createSpan({ text: "Types: " });
-            typeLabel.style.fontWeight = "bold";
+            typeLabel.addClass("accounting-filter-label");
 
             const types = ['Assets', 'Liabilities', 'Equity', 'Income', 'Expenses'];
             types.forEach(type => {
                 const span = typeRow.createEl("label");
-                span.style.display = "flex";
-                span.style.gap = "5px";
-                span.style.alignItems = "center";
+                span.addClass("accounting-flex-item");
 
                 const cb = span.createEl("input", { type: "checkbox" });
                 cb.checked = this.selectedTypes.has(type);
-                cb.onclick = async () => {
+                cb.onclick = () => {
                     if (cb.checked) this.selectedTypes.add(type);
                     else this.selectedTypes.delete(type);
-                    await this.renderCurrentView(container);
+                    this.renderCurrentView(container);
                 };
                 span.createSpan({ text: type });
             });
 
             // Account Filter Row
             const accRow = controls.createEl("div");
-            accRow.style.display = "flex";
-            accRow.style.gap = "10px";
-            accRow.style.alignItems = "center";
+            accRow.addClass("accounting-row");
 
-            const accLabel = accRow.createSpan({ text: "Filter Accounts: " });
-            accLabel.style.fontWeight = "bold";
+            const accLabel = accRow.createSpan({ text: "Filter accounts: " });
+            accLabel.addClass("accounting-filter-label");
 
             const accInputDiv = accRow.createEl("div");
             const accInput = accInputDiv.createEl("input", { type: "text", placeholder: "Search account..." });
@@ -166,28 +156,25 @@ export class AccountingDashboardView extends ItemView {
             const knownAccounts = Array.from(this.ledger['openAccounts']?.keys() || []);
             new AccountSuggest(this.app, accInput, knownAccounts);
 
-            accInput.onkeypress = (e) => {
+            accInput.addEventListener("keydown", (e) => {
                 if (e.key === "Enter") addAccountBtn.buttonEl.click();
-            };
+            });
 
             const addAccountBtn = new ButtonComponent(accRow)
-                .setButtonText("Add Filter")
-                .onClick(async () => {
+                .setButtonText("Add filter")
+                .onClick(() => {
                     const val = accInput.value.trim();
                     if (val && !this.selectedAccounts.has(val)) {
                         this.selectedAccounts.add(val);
                         accInput.value = "";
                         this.renderSelectedAccounts(selectedAccsContainer, container, this.selectedAccounts, 'summary');
-                        await this.renderCurrentView(container);
+                        this.renderCurrentView(container);
                     }
                 });
 
             // Selected Accounts Container
             const selectedAccsContainer = controls.createEl("div");
-            selectedAccsContainer.style.display = "flex";
-            selectedAccsContainer.style.flexWrap = "wrap";
-            selectedAccsContainer.style.gap = "5px";
-            selectedAccsContainer.style.marginTop = "5px";
+            selectedAccsContainer.addClass("accounting-pill-container");
             this.renderSelectedAccounts(selectedAccsContainer, container, this.selectedAccounts, 'summary');
         }
 
@@ -195,91 +182,82 @@ export class AccountingDashboardView extends ItemView {
         if (this.activeTab === 'transactions') {
             // 1. Tag Filter
             const tagRow = controls.createEl("div");
-            tagRow.style.display = "flex";
-            tagRow.style.gap = "10px";
-            tagRow.style.alignItems = "center";
+            tagRow.addClass("accounting-row");
 
-            const tagLabel = tagRow.createSpan({ text: "Filter Tag: " });
-            tagLabel.style.fontWeight = "bold";
+            const tagLabel = tagRow.createSpan({ text: "Filter tag: " });
+            tagLabel.addClass("accounting-filter-label");
 
             new Setting(tagRow)
                 .addText(text => text
                     .setPlaceholder("#tag")
                     .setValue(this.tagFilter)
-                    .onChange(async (val) => {
+                    .onChange((val) => {
                         this.tagFilter = val;
-                        await this.renderTransactionsTable(container);
+                        this.renderTransactionsTable(container);
                     }));
 
             const knownAccounts = Array.from(this.ledger['openAccounts']?.keys() || []);
 
             // 2. Source Account Filter
             const sourceRow = controls.createEl("div");
-            sourceRow.style.display = "flex";
-            sourceRow.style.gap = "10px";
-            sourceRow.style.alignItems = "center";
-            sourceRow.createSpan({ text: "Source Accounts: ", cls: "accounting-filter-label" }).style.fontWeight = "bold";
+            sourceRow.addClass("accounting-row");
+            const sourceLabel = sourceRow.createSpan({ text: "Source accounts: " });
+            sourceLabel.addClass("accounting-filter-label");
 
-            const sourceInput = sourceRow.createEl("input", { type: "text", placeholder: "Search Source..." });
+            const sourceInput = sourceRow.createEl("input", { type: "text", placeholder: "Search source..." });
             new AccountSuggest(this.app, sourceInput, knownAccounts);
-            sourceInput.onkeypress = (e) => { if (e.key === "Enter") addSourceBtn.buttonEl.click(); };
+            sourceInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addSourceBtn.buttonEl.click(); });
 
-            const addSourceBtn = new ButtonComponent(sourceRow).setButtonText("Add").onClick(async () => {
+            const addSourceBtn = new ButtonComponent(sourceRow).setButtonText("Add").onClick(() => {
                 const val = sourceInput.value.trim();
                 if (val && !this.selectedSourceAccounts.has(val)) {
                     this.selectedSourceAccounts.add(val);
                     sourceInput.value = "";
                     this.renderSelectedAccounts(selectedSourceContainer, container, this.selectedSourceAccounts, 'transactions');
-                    await this.renderCurrentView(container);
+                    this.renderCurrentView(container);
                 }
             });
             const selectedSourceContainer = controls.createEl("div");
-            selectedSourceContainer.style.display = "flex";
-            selectedSourceContainer.style.gap = "5px";
-            selectedSourceContainer.style.marginBottom = "5px";
+            selectedSourceContainer.addClass("accounting-pill-container");
             this.renderSelectedAccounts(selectedSourceContainer, container, this.selectedSourceAccounts, 'transactions');
 
             // 3. Target Account Filter
             const targetRow = controls.createEl("div");
-            targetRow.style.display = "flex";
-            targetRow.style.gap = "10px";
-            targetRow.style.alignItems = "center";
-            targetRow.createSpan({ text: "Target Accounts: ", cls: "accounting-filter-label" }).style.fontWeight = "bold";
+            targetRow.addClass("accounting-row");
+            const targetLabel = targetRow.createSpan({ text: "Target accounts: " });
+            targetLabel.addClass("accounting-filter-label");
 
-            const targetInput = targetRow.createEl("input", { type: "text", placeholder: "Search Target..." });
+            const targetInput = targetRow.createEl("input", { type: "text", placeholder: "Search target..." });
             new AccountSuggest(this.app, targetInput, knownAccounts);
-            targetInput.onkeypress = (e) => { if (e.key === "Enter") addTargetBtn.buttonEl.click(); };
+            targetInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addTargetBtn.buttonEl.click(); });
 
-            const addTargetBtn = new ButtonComponent(targetRow).setButtonText("Add").onClick(async () => {
+            const addTargetBtn = new ButtonComponent(targetRow).setButtonText("Add").onClick(() => {
                 const val = targetInput.value.trim();
                 if (val && !this.selectedTargetAccounts.has(val)) {
                     this.selectedTargetAccounts.add(val);
                     targetInput.value = "";
                     this.renderSelectedAccounts(selectedTargetContainer, container, this.selectedTargetAccounts, 'transactions');
-                    await this.renderCurrentView(container);
+                    this.renderCurrentView(container);
                 }
             });
             const selectedTargetContainer = controls.createEl("div");
-            selectedTargetContainer.style.display = "flex";
-            selectedTargetContainer.style.gap = "5px";
+            selectedTargetContainer.addClass("accounting-pill-container");
             this.renderSelectedAccounts(selectedTargetContainer, container, this.selectedTargetAccounts, 'transactions');
         }
 
 
         // Table Container
-        const tableContainer = container.createEl("div", { cls: "accounting-table-container" });
-        tableContainer.style.overflowY = "auto";
-        tableContainer.style.maxHeight = "calc(100% - 350px)";
-        tableContainer.style.marginTop = "10px";
+        const tableContainer = container.createEl("div");
+        tableContainer.addClass("accounting-table-container");
 
-        await this.renderCurrentView(container);
+        this.renderCurrentView(container);
     }
 
-    async renderCurrentView(container: HTMLElement) {
+    renderCurrentView(container: HTMLElement) {
         if (this.activeTab === 'summary') {
-            await this.renderTable(container);
+            this.renderTable(container);
         } else {
-            await this.renderTransactionsTable(container);
+            this.renderTransactionsTable(container);
         }
     }
 
@@ -289,28 +267,21 @@ export class AccountingDashboardView extends ItemView {
 
         set.forEach(acc => {
             const pill = container.createEl("div");
-            pill.style.background = "var(--interactive-accent)";
-            pill.style.color = "var(--text-on-accent)";
-            pill.style.padding = "2px 8px";
-            pill.style.borderRadius = "10px";
-            pill.style.display = "flex";
-            pill.style.gap = "5px";
-            pill.style.alignItems = "center";
-            pill.style.fontSize = "0.9em";
+            pill.addClass("accounting-pill");
 
             pill.createSpan({ text: acc });
             const close = pill.createEl("span", { text: "✖" });
-            close.style.cursor = "pointer";
-            close.onclick = async () => {
+            close.addClass("accounting-pill-close");
+            close.onclick = () => {
                 set.delete(acc);
                 // Re-render only own container
                 this.renderSelectedAccounts(container, viewContainer, set, tabContext);
-                await this.renderCurrentView(viewContainer);
+                this.renderCurrentView(viewContainer);
             };
         });
     }
 
-    async renderTable(container: HTMLElement) {
+    renderTable(container: HTMLElement) {
         // Find existing table container or use the one created
         let tableContainer = container.querySelector(".accounting-table-container") as HTMLElement;
         if (!tableContainer) return; // Should exist
@@ -335,18 +306,14 @@ export class AccountingDashboardView extends ItemView {
         const currency = this.plugin.settings.currencySymbol;
 
         const table = tableContainer.createEl("table");
-        table.style.width = "100%";
-        table.style.borderCollapse = "collapse";
+        table.addClass("accounting-table");
 
         // Header
         const thead = table.createEl("thead");
         const headerRow = thead.createEl("tr");
-        const headers = ["Type", "Account", "Start Balance", "End Balance", "Difference", "Current Balance"];
+        const headers = ["Type", "Account", "Start balance", "End balance", "Difference", "Current balance"];
         headers.forEach(h => {
-            const th = headerRow.createEl("th", { text: h });
-            th.style.textAlign = "left";
-            th.style.borderBottom = "1px solid var(--background-modifier-border)";
-            th.style.padding = "10px";
+            headerRow.createEl("th", { text: h });
         });
 
         // Body
@@ -374,11 +341,10 @@ export class AccountingDashboardView extends ItemView {
             totalCurr += bal.currentBalance;
         });
 
-        // Footer (Totals) - Added as a last row in tbody or tfoot
+        // Footer (Totals)
         const tfoot = table.createEl("tfoot");
         const footerRow = tfoot.createEl("tr");
-        footerRow.style.fontWeight = "bold";
-        footerRow.style.background = "var(--background-secondary)";
+        footerRow.addClass("accounting-table-footer");
 
         this.createCell(footerRow, "TOTAL");
         this.createCell(footerRow, `(${balances.length} filtered)`); // Account placeholder
@@ -388,7 +354,7 @@ export class AccountingDashboardView extends ItemView {
         this.createCell(footerRow, `${totalCurr.toFixed(2)} ${currency}`);
     }
 
-    async renderTransactionsTable(container: HTMLElement) {
+    renderTransactionsTable(container: HTMLElement) {
         let tableContainer = container.querySelector(".accounting-table-container") as HTMLElement;
         if (!tableContainer) return;
         tableContainer.empty();
@@ -421,20 +387,15 @@ export class AccountingDashboardView extends ItemView {
         });
 
         const table = tableContainer.createEl("table");
-        table.style.width = "100%";
-        table.style.borderCollapse = "collapse";
+        table.addClass("accounting-table");
 
         // Header
         const thead = table.createEl("thead");
         const headerRow = thead.createEl("tr");
-        const headers = ["Date", "Tag", "Description", "Source Account", "Target Account", "Amount"];
+        const headers = ["Date", "Tag", "Description", "Source account", "Target account", "Amount"];
         headers.forEach(h => {
             const th = headerRow.createEl("th", { text: h });
-            th.style.textAlign = "left";
-            th.style.borderBottom = "1px solid var(--background-modifier-border)";
-            th.style.padding = "10px";
-            // Align Amount to right?
-            if (h === "Amount") th.style.textAlign = "right";
+            if (h === "Amount") th.addClass("accounting-align-right");
         });
 
         const tbody = table.createEl("tbody");
@@ -449,18 +410,10 @@ export class AccountingDashboardView extends ItemView {
 
             // Tag Column
             const tagCell = row.createEl("td");
-            tagCell.style.padding = "5px 10px";
-            tagCell.style.borderBottom = "1px solid var(--background-modifier-border)";
             if (t.tags.length > 0) {
                 t.tags.forEach(tag => {
                     const span = tagCell.createSpan({ text: tag });
-                    span.style.background = "var(--background-modifier-accent)";
-                    span.style.color = "var(--text-on-accent)";
-                    span.style.borderRadius = "5px";
-                    span.style.padding = "2px 5px";
-                    span.style.fontSize = "0.8em";
-                    span.style.marginRight = "5px";
-                    span.style.whiteSpace = "nowrap";
+                    span.addClass("accounting-tag-pill");
                 });
             } else {
                 tagCell.setText("");
@@ -469,10 +422,6 @@ export class AccountingDashboardView extends ItemView {
             this.createCell(row, t.description);
 
             // Logic for Source/Target/Amount
-            // Source: Negative amounts (Credit)
-            // Target: Positive amounts (Debit)
-            // Amount: Absolute sum of positives (flow magnitude)
-
             const sources = t.postings.filter(p => p.amount < 0);
             const targets = t.postings.filter(p => p.amount > 0);
 
@@ -486,9 +435,7 @@ export class AccountingDashboardView extends ItemView {
             this.createCell(row, targetText);
 
             const amountCell = row.createEl("td", { text: `${amount.toFixed(2)} ${currency}` });
-            amountCell.style.padding = "5px 10px";
-            amountCell.style.borderBottom = "1px solid var(--background-modifier-border)";
-            amountCell.style.textAlign = "right";
+            amountCell.addClass("accounting-align-right");
 
             totalAmount += amount;
         });
@@ -496,25 +443,20 @@ export class AccountingDashboardView extends ItemView {
         // Total Row
         const tfoot = table.createEl("tfoot");
         const footerRow = tfoot.createEl("tr");
-        footerRow.style.fontWeight = "bold";
-        footerRow.style.background = "var(--background-secondary)";
+        footerRow.addClass("accounting-table-footer");
 
         // Date, Tag, Desc, Source, Target, Amount (6 columns)
         // Span first 5 cols for "Total" label
         const totalLabelCell = footerRow.createEl("td", { text: "TOTAL" });
         totalLabelCell.colSpan = 5;
-        totalLabelCell.style.padding = "5px 10px";
-        totalLabelCell.style.textAlign = "right"; // Right align label to be close to amount
+        totalLabelCell.addClass("accounting-align-right");
 
         const totalValueCell = footerRow.createEl("td", { text: `${totalAmount.toFixed(2)} ${currency}` });
-        totalValueCell.style.padding = "5px 10px";
-        totalValueCell.style.textAlign = "right";
+        totalValueCell.addClass("accounting-align-right");
     }
 
     createCell(row: HTMLElement, text: string) {
-        const td = row.createEl("td", { text: text });
-        td.style.padding = "5px 10px";
-        td.style.borderBottom = "1px solid var(--background-modifier-border)";
+        row.createEl("td", { text: text });
     }
 
     async onClose() {

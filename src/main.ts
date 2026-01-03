@@ -45,7 +45,7 @@ export default class ObsidianAccountingPlugin extends Plugin {
                     .setTitle("Open Dashboard")
                     .setIcon("bar-chart")
                     .onClick(() => {
-                        this.activateView();
+                        void this.activateView();
                     })
             );
 
@@ -57,7 +57,7 @@ export default class ObsidianAccountingPlugin extends Plugin {
             id: 'open-accounting-dashboard',
             name: 'Open Dashboard',
             callback: () => {
-                this.activateView();
+                void this.activateView();
             }
         });
 

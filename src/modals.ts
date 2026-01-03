@@ -1,4 +1,4 @@
-import { App, Modal, Setting, Notice, TextComponent } from "obsidian";
+import { App, Modal, Setting, Notice } from "obsidian";
 import ObsidianAccountingPlugin from "./main";
 import { AccountSuggest } from "./suggester";
 
@@ -34,7 +34,7 @@ export class AddAccountModal extends Modal {
                 .onChange(value => this.accountDate = value));
 
         new Setting(contentEl)
-            .setName("Account Type")
+            .setName("Account type")
             .addDropdown(drop => drop
                 .addOption("Assets", "Assets")
                 .addOption("Liabilities", "Liabilities")
@@ -45,7 +45,7 @@ export class AddAccountModal extends Modal {
                 .onChange(value => this.accountType = value));
 
         new Setting(contentEl)
-            .setName("Account Name")
+            .setName("Account name")
             .setDesc("Colon separated (e.g. US:Bank:Checking)")
             .addText(text => text
                 .setValue(this.accountName)
@@ -58,17 +58,17 @@ export class AddAccountModal extends Modal {
                 .onChange(value => this.currency = value));
 
         new Setting(contentEl)
-            .setName("Opening Balance")
+            .setName("Opening balance")
             .addText(text => text
                 .setValue(this.openingBalance)
                 .onChange(value => this.openingBalance = value));
 
         new Setting(contentEl)
             .addButton(btn => btn
-                .setButtonText("Create Account")
+                .setButtonText("Create account")
                 .setCta()
                 .onClick(() => {
-                    this.createAccount();
+                    void this.createAccount();
                     this.close();
                 }));
     }
@@ -130,7 +130,7 @@ export class AddTransactionModal extends Modal {
         // Load accounts
         this.allAccounts = await this.plugin.fileUtils.getAccounts(this.plugin.settings.beancountFilePath);
 
-        contentEl.createEl("h2", { text: "Add Transaction" });
+        contentEl.createEl("h2", { text: "Add transaction" });
         contentEl.addClass("accounting-modal-content");
 
         new Setting(contentEl)
@@ -169,7 +169,7 @@ export class AddTransactionModal extends Modal {
 
         // Source Account with Suggestion
         new Setting(contentEl)
-            .setName("Source Account")
+            .setName("Source account")
             .setDesc("e.g. Assets:Cash")
             .addText(text => {
                 text.setValue(this.sourceAccount)
@@ -179,7 +179,7 @@ export class AddTransactionModal extends Modal {
 
         // Target Account with Suggestion
         new Setting(contentEl)
-            .setName("Target Account")
+            .setName("Target account")
             .setDesc("e.g. Expenses:Food")
             .addText(text => {
                 text.setValue(this.targetAccount)
@@ -197,10 +197,10 @@ export class AddTransactionModal extends Modal {
 
         new Setting(contentEl)
             .addButton(btn => btn
-                .setButtonText("Add Transaction")
+                .setButtonText("Add transaction")
                 .setCta()
                 .onClick(() => {
-                    this.createTransaction();
+                    void this.createTransaction();
                     this.close();
                 }));
     }

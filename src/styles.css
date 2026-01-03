@@ -16,3 +16,111 @@
     font-weight: bold;
     margin-bottom: 5px;
 }
+
+/* Dashboard Styles */
+.accounting-dashboard-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--background-modifier-border);
+    margin-bottom: 15px;
+}
+
+.accounting-tab-button {
+    padding: 10px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.accounting-tab-button.active {
+    font-weight: bold;
+    border-bottom-color: var(--interactive-accent);
+}
+
+.accounting-dashboard-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 5px;
+}
+
+.accounting-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.accounting-filter-label {
+    font-weight: bold;
+}
+
+.accounting-flex-item {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.accounting-pill-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.accounting-pill {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    font-size: 0.9em;
+}
+
+.accounting-pill-close {
+    cursor: pointer;
+}
+
+.accounting-table-container {
+    overflow-y: auto;
+    max-height: calc(100% - 350px);
+    margin-top: 10px;
+}
+
+.accounting-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.accounting-table th {
+    text-align: left;
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding: 10px;
+}
+
+.accounting-table td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.accounting-align-right {
+    text-align: right !important;
+}
+
+.accounting-table-footer {
+    font-weight: bold;
+    background-color: var(--background-secondary);
+}
+
+.accounting-tag-pill {
+    background: var(--background-modifier-accent);
+    color: var(--text-on-accent);
+    border-radius: 5px;
+    padding: 2px 5px;
+    font-size: 0.8em;
+    margin-right: 5px;
+    white-space: nowrap;
+}

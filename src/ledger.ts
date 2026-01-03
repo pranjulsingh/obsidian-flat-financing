@@ -1,4 +1,4 @@
-export interface BalanceResult {
+export interface Balance {
     account: string;
     type: string;
     startBalance: number;
@@ -183,8 +183,8 @@ export class Ledger {
         return sum;
     }
 
-    getBalances(startDate: string, endDate: string): BalanceResult[] {
-        const results: Map<string, BalanceResult> = new Map();
+    getBalances(startDate: string, endDate: string): Balance[] {
+        const results: Map<string, Balance> = new Map();
 
         // Initialize all known accounts
         for (const [acc, _] of this.openAccounts) {
