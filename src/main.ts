@@ -19,12 +19,12 @@ export default class ObsidianAccountingPlugin extends Plugin {
         );
 
         // Ribbon Icon
-        this.addRibbonIcon('dollar-sign', 'Obsidian Accounting', (evt: MouseEvent) => {
+        this.addRibbonIcon('dollar-sign', 'Obsidian accounting', (evt: MouseEvent) => {
             const menu = new Menu();
 
             menu.addItem((item) =>
                 item
-                    .setTitle("Add Account")
+                    .setTitle("Add account")
                     .setIcon("plus-circle")
                     .onClick(() => {
                         new AddAccountModal(this.app, this).open();
@@ -33,7 +33,7 @@ export default class ObsidianAccountingPlugin extends Plugin {
 
             menu.addItem((item) =>
                 item
-                    .setTitle("Add Transaction")
+                    .setTitle("Add transaction")
                     .setIcon("banknote")
                     .onClick(() => {
                         new AddTransactionModal(this.app, this).open();
@@ -42,7 +42,7 @@ export default class ObsidianAccountingPlugin extends Plugin {
 
             menu.addItem((item) =>
                 item
-                    .setTitle("Open Dashboard")
+                    .setTitle("Open dashboard")
                     .setIcon("bar-chart")
                     .onClick(() => {
                         void this.activateView();
@@ -55,7 +55,7 @@ export default class ObsidianAccountingPlugin extends Plugin {
         // Commands
         this.addCommand({
             id: 'open-accounting-dashboard',
-            name: 'Open Dashboard',
+            name: 'Open dashboard',
             callback: () => {
                 void this.activateView();
             }
@@ -63,7 +63,7 @@ export default class ObsidianAccountingPlugin extends Plugin {
 
         this.addCommand({
             id: 'add-accounting-account',
-            name: 'Add Account',
+            name: 'Add account',
             callback: () => {
                 new AddAccountModal(this.app, this).open();
             }
@@ -71,7 +71,7 @@ export default class ObsidianAccountingPlugin extends Plugin {
 
         this.addCommand({
             id: 'add-accounting-transaction',
-            name: 'Add Transaction',
+            name: 'Add transaction',
             callback: () => {
                 new AddTransactionModal(this.app, this).open();
             }
@@ -110,6 +110,6 @@ export default class ObsidianAccountingPlugin extends Plugin {
         }
 
         // "Reveal" the leaf in case it is in a collapsed sidebar
-        workspace.revealLeaf(leaf);
+        await workspace.revealLeaf(leaf);
     }
 }

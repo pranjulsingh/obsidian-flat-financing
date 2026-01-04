@@ -90,7 +90,7 @@ export class Ledger {
                 // Determine if it's a posting line
                 // Regex for posting: ws Account Amount Currency
                 // Note: This is a simplified parser. It assumes standard formatting from our plugin.
-                const postingMatch = line.match(/^\s+([A-Za-z0-9\-_:]+)\s+(-?[\d\.]+)\s+([A-Z]+)/);
+                const postingMatch = line.match(/^\s+([A-Za-z0-9\-_:]+)\s+(-?[\d.]+)\s+([A-Z]+)/);
                 if (postingMatch) {
                     currentTransaction.postings.push({
                         account: postingMatch[1],
@@ -187,7 +187,7 @@ export class Ledger {
         const results: Map<string, Balance> = new Map();
 
         // Initialize all known accounts
-        for (const [acc, _] of this.openAccounts) {
+        for (const acc of this.openAccounts.keys()) {
             results.set(acc, {
                 account: acc,
                 // Naive type extraction: Assets:Bank -> Assets

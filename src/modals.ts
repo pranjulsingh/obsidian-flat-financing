@@ -24,7 +24,7 @@ export class AddAccountModal extends Modal {
 
     onOpen() {
         const { contentEl } = this;
-        contentEl.createEl("h2", { text: "Add New Account" });
+        contentEl.createEl("h2", { text: "Add new account" });
         contentEl.addClass("accounting-modal-content");
 
         new Setting(contentEl)
@@ -46,7 +46,7 @@ export class AddAccountModal extends Modal {
 
         new Setting(contentEl)
             .setName("Account name")
-            .setDesc("Colon separated (e.g. US:Bank:Checking)")
+            .setDesc("Colon separated (e.g. bank:checking)")
             .addText(text => text
                 .setValue(this.accountName)
                 .onChange(value => this.accountName = value));
@@ -170,7 +170,7 @@ export class AddTransactionModal extends Modal {
         // Source Account with Suggestion
         new Setting(contentEl)
             .setName("Source account")
-            .setDesc("e.g. Assets:Cash")
+            .setDesc("e.g. assets:cash")
             .addText(text => {
                 text.setValue(this.sourceAccount)
                     .onChange(value => this.sourceAccount = value);
@@ -180,7 +180,7 @@ export class AddTransactionModal extends Modal {
         // Target Account with Suggestion
         new Setting(contentEl)
             .setName("Target account")
-            .setDesc("e.g. Expenses:Food")
+            .setDesc("e.g. expenses:food")
             .addText(text => {
                 text.setValue(this.targetAccount)
                     .onChange(value => this.targetAccount = value);

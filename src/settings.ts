@@ -24,10 +24,12 @@ export class AccountingSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        containerEl.createEl("h2", { text: "Obsidian Accounting Settings" });
+        new Setting(containerEl)
+            .setName("Obsidian accounting settings")
+            .setHeading();
 
         new Setting(containerEl)
-            .setName("Beancount File Path")
+            .setName("Beancount file path")
             .setDesc("Path to your .beancount file relative to the vault root (e.g., folder/accounting.beancount)")
             .addText(text => text
                 .setPlaceholder("accounting.beancount")
@@ -38,8 +40,8 @@ export class AccountingSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName("Currency Symbol")
-            .setDesc("Default currency code (e.g., USD, EUR, GBP)")
+            .setName("Currency symbol")
+            .setDesc("Default currency code")
             .addText(text => text
                 .setPlaceholder("USD")
                 .setValue(this.plugin.settings.currencySymbol)

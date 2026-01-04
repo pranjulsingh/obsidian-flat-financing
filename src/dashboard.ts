@@ -38,7 +38,7 @@ export class AccountingDashboardView extends ItemView {
     }
 
     getDisplayText() {
-        return "Accounting Dashboard";
+        return "Accounting dashboard";
     }
 
     async onOpen() {
@@ -56,7 +56,7 @@ export class AccountingDashboardView extends ItemView {
         }
 
         new Setting(container)
-            .setName("Accounting Dashboard")
+            .setName("Accounting dashboard")
             .setHeading();
 
         // Tab Buttons
@@ -283,7 +283,7 @@ export class AccountingDashboardView extends ItemView {
 
     renderTable(container: HTMLElement) {
         // Find existing table container or use the one created
-        let tableContainer = container.querySelector(".accounting-table-container") as HTMLElement;
+        let tableContainer = container.querySelector(".accounting-table-container");
         if (!tableContainer) return; // Should exist
 
         tableContainer.empty();
@@ -355,7 +355,7 @@ export class AccountingDashboardView extends ItemView {
     }
 
     renderTransactionsTable(container: HTMLElement) {
-        let tableContainer = container.querySelector(".accounting-table-container") as HTMLElement;
+        let tableContainer = container.querySelector(".accounting-table-container");
         if (!tableContainer) return;
         tableContainer.empty();
 
