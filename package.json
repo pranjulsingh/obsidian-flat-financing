@@ -1,6 +1,6 @@
 {
     "name": "flat-financing",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "Beancount integration for Obsidian",
     "main": "main.js",
     "scripts": {

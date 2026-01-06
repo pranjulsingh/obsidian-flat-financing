@@ -19,7 +19,7 @@ export default class ObsidianAccountingPlugin extends Plugin {
         );
 
         // Ribbon Icon
-        this.addRibbonIcon('dollar-sign', 'Obsidian accounting', (evt: MouseEvent) => {
+        this.addRibbonIcon('banknote', 'Obsidian accounting', (evt: MouseEvent) => {
             const menu = new Menu();
 
             menu.addItem((item) =>
