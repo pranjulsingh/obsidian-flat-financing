@@ -46,7 +46,7 @@ export class AddAccountModal extends Modal {
 
         new Setting(contentEl)
             .setName("Account name")
-            .setDesc("Colon separated (e.g. bank:checking)")
+            .setDesc("Colon separated (e.g. Bank:Checking)")
             .addText(text => text
                 .setValue(this.accountName)
                 .onChange(value => this.accountName = value));
@@ -170,7 +170,7 @@ export class AddTransactionModal extends Modal {
         // Source Account with Suggestion
         new Setting(contentEl)
             .setName("Source account")
-            .setDesc("e.g. assets:cash")
+            .setDesc("e.g. Assets:Cash")
             .addText(text => {
                 text.setValue(this.sourceAccount)
                     .onChange(value => this.sourceAccount = value);
@@ -180,7 +180,7 @@ export class AddTransactionModal extends Modal {
         // Target Account with Suggestion
         new Setting(contentEl)
             .setName("Target account")
-            .setDesc("e.g. expenses:food")
+            .setDesc("e.g. Expenses:Food")
             .addText(text => {
                 text.setValue(this.targetAccount)
                     .onChange(value => this.targetAccount = value);

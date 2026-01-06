@@ -25,7 +25,7 @@ export class AccountingSettingTab extends PluginSettingTab {
         containerEl.empty();
 
         new Setting(containerEl)
-            .setName("Obsidian accounting settings")
+            .setName("Obsidian accounting")
             .setHeading();
 
         new Setting(containerEl)

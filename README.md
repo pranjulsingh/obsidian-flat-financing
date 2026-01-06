@@ -2,6 +2,8 @@
 
 A simple [Beancount](https://beancount.github.io/docs/) integration for Obsidian, allowing you to manage your personal finances, track expenses, and view interactive dashboards directly within your vault.
 
+![Demo](resources/FlatFinancing.gif)
+
 ## Features
 
 - **Interactive Dashboard**:
