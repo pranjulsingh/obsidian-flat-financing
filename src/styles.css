@@ -99,6 +99,10 @@
     text-align: left;
     border-bottom: 1px solid var(--background-modifier-border);
     padding: 10px;
+    position: sticky;
+    top: 0;
+    background-color: var(--background-primary);
+    z-index: 2;
 }
 
 .accounting-table td {
@@ -110,9 +114,12 @@
     text-align: right !important;
 }
 
-.accounting-table-footer {
+.accounting-table-footer td {
     font-weight: bold;
     background-color: var(--background-secondary);
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
 }
 
 .accounting-tag-pill {
@@ -123,4 +130,59 @@
     font-size: 0.8em;
     margin-right: 5px;
     white-space: nowrap;
+}
+
+/* Default filter row styling (Desktop/General) */
+.accounting-filter-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Responsive Mobile Adjustments */
+@media (max-width: 768px) {
+    /* Explode tabs for easier tapping */
+    .accounting-dashboard-tabs {
+        flex-direction: row;
+        width: 100%;
+    }
+    
+    .accounting-tab-button {
+        flex: 1;
+        text-align: center;
+        padding: 12px 5px;
+        font-size: 1em;
+    }
+
+    /* Stack form/search inputs vertically */
+    .accounting-row, .accounting-filter-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .accounting-filter-row {
+        flex-wrap: wrap;
+        flex-direction: row; /* Checkboxes might look better flowing as a wrapped flex row rather than a literal vertical stack */
+    }
+
+    .accounting-dashboard-controls {
+        gap: 15px;
+    }
+
+    /* Setup native horizontal swiping for wide mobile data tables */
+    .accounting-table-container {
+        /* Maintain scroll height bounds but allow sweeping */
+        max-height: calc(100vh - 250px);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-top: 5px;
+    }
+
+    /* Prevent mobile from awkwardly wrapping dense columns */
+    .accounting-table th, .accounting-table td {
+        white-space: nowrap;
+        font-size: 0.9em;
+        padding: 8px 12px; /* Wider touch areas */
+    }
 }

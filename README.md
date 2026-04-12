@@ -10,14 +10,22 @@ A simple [Beancount](https://beancount.github.io/docs/) integration for Obsidian
     - **Summary View**: View account balances filtered by Date, Type (Assets, Income, etc.), and specific Accounts.
     - **Transactions View**: List transaction details with powerful filtering.
     - **Tabs**: Easily switch between Summary and Transaction lists.
+    - **Multi-column Sorting**: Every table header is intuitively clickable. Easily swap between ascending/descending modes across financial metrics and descriptions.
+    - **Sticky Geometries**: Large financial datasets seamlessly drift via custom sticky scroll architectures, freezing header columns and bottom-line totals dynamically inside the frame!
+- **Data Export**:
+    - **Export CSV / PDF**: Leverage out-of-the-box download capabilities translating your table configurations instantly into universal formats directly connected to native Obsidian capabilities.
 - **Advanced Filtering**:
     - Multi-select filters for **Source Accounts** (Credits) and **Target Accounts** (Debits).
     - Filter by **Tags** (e.g., `#vacation`).
     - Standard Date Range filters.
-- **Easy Data Entry**:
-    - **Add Account**: Create new accounts with opening balances.
-    - **Add Transaction**: Quick entry modal with auto-completion for account names.
+- **Easy Data Entry & Maintenance**:
+    - **Add Account**: Create new accounts with opening balances. The engine intelligently prepends new declarations right below your global configuration header instead of crashing at the file-base!
+    - **Add Transaction**: Quick entry modal with auto-completion for account names. Supports robust field verification constraints locking zero-value or invalid assignments natively.
+    - **Edit Transactions**: Hover over any dashboard record and pop open a direct live modification terminal visually. Changes seamlessly merge straight back into the exact `.beancount` block coordinates perfectly untouched via block splicing!
     - **Auto-Creation**: Automatically initializes new accounts found in transaction entries.
+- **Full Mobile Responsive Optimization**:
+    - The underlying environment maps complex dynamic variables against Android and iOS footprints! Form controls smartly wrap into broad columns. Native Horizontal view-swiping natively unlocks robust data tables without crushing mobile columns.
+    - Custom JS APIs automatically track your live keyboard size on standard inputs, visually sweeping your entire framework straight out of the virtual keyboard overlay seamlessly.
 - **Seamless Integration**:
     - Works with your existing `.beancount` text files.
     - Updates in real-time.

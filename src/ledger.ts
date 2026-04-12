@@ -13,6 +13,8 @@ export interface Transaction {
     tags: string[];
     postings: { account: string; amount: number; currency: string }[];
     isSynthetic?: boolean;
+    lineStart?: number;
+    lineEnd?: number;
 }
 
 export class Ledger {
@@ -30,7 +32,8 @@ export class Ledger {
         const lines = content.split('\n');
         let currentTransaction: Transaction | null = null;
 
-        for (const line of lines) {
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
             const trimmed = line.trim();
             if (!trimmed || trimmed.startsWith(';')) continue;
 
@@ -56,6 +59,11 @@ export class Ledger {
             }
             // Transaction start: YYYY-MM-DD * "Desc" ...
             else if (/^\d{4}-\d{2}-\d{2}/.test(date) && (parts[1] === '*' || parts[1] === '!')) {
+                // If closing a previous transaction, mark its end line
+                if (currentTransaction) {
+                    currentTransaction.lineEnd = i - 1;
+                }
+
                 // Parse Description and Tags
                 // Format: YYYY-MM-DD * "Description" #tag1 #tag2
                 const rest = trimmed.substring(date.length + parts[1].length + 2).trim();
@@ -81,7 +89,8 @@ export class Ledger {
                     date: date,
                     description: desc,
                     tags: tags,
-                    postings: []
+                    postings: [],
+                    lineStart: i
                 };
                 this.transactions.push(currentTransaction);
             }
@@ -99,8 +108,15 @@ export class Ledger {
                     });
                 }
             } else {
-                currentTransaction = null;
+                if (currentTransaction) {
+                    currentTransaction.lineEnd = i - 1;
+                    currentTransaction = null;
+                }
             }
+        }
+
+        if (currentTransaction) {
+            currentTransaction.lineEnd = lines.length - 1;
         }
 
         // Sort transactions by date
@@ -183,7 +199,7 @@ export class Ledger {
         return sum;
     }
 
-    getBalances(startDate: string, endDate: string): Balance[] {
+    getBalances(startDate: string, endDate: string, settings?: any): Balance[] {
         const results: Map<string, Balance> = new Map();
 
         // Initialize all known accounts
@@ -218,6 +234,15 @@ export class Ledger {
         // Calculate balances
 
         for (const t of this.transactions) {
+            if (settings && !settings.showOpeningBalances && t.isSynthetic) {
+                continue;
+            }
+
+            const isTransfer = t.postings.length > 1 && t.postings.every(p => !p.account.startsWith("Income") && !p.account.startsWith("Expenses") && !p.account.startsWith("Equity"));
+            if (settings && !settings.showTransfers && isTransfer) {
+                continue;
+            }
+
             for (const p of t.postings) {
                 const res = results.get(p.account);
                 if (!res) continue;
@@ -280,7 +305,13 @@ export class Ledger {
         return finalResults;
     }
 
-    getTransactions(startDate: string, endDate: string): Transaction[] {
-        return this.transactions.filter(t => t.date >= startDate && t.date <= endDate);
+    getTransactions(startDate: string, endDate: string, settings?: any): Transaction[] {
+        return this.transactions.filter(t => {
+            if (t.date < startDate || t.date > endDate) return false;
+            if (settings && !settings.showOpeningBalances && t.isSynthetic) return false;
+            const isTransfer = t.postings.length > 1 && t.postings.every(p => !p.account.startsWith("Income") && !p.account.startsWith("Expenses") && !p.account.startsWith("Equity"));
+            if (settings && !settings.showTransfers && isTransfer) return false;
+            return true;
+        });
     }
 }

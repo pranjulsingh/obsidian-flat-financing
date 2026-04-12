@@ -1,6 +1,60 @@
 import { App, Modal, Setting, Notice } from "obsidian";
 import ObsidianAccountingPlugin from "./main";
 import { AccountSuggest } from "./suggester";
+import { Transaction } from "./ledger";
+
+function setupKeyboardPadding(modal: Modal) {
+    const onFocus = (e: Event) => {
+        setTimeout(() => {
+            const target = e.target as HTMLElement;
+            if (!target) return;
+
+            // Guess standard keyboard height if visualViewport isn't changing
+            let kbHeight = window.innerHeight * 0.45; // Approximately 45% of screen height
+            if (window.visualViewport && window.innerHeight - window.visualViewport.height > 50) {
+                kbHeight = window.innerHeight - window.visualViewport.height;
+            }
+
+            const keyboardTop = window.innerHeight - kbHeight;
+            const targetRect = target.getBoundingClientRect();
+            
+            // We want the input and its suggestion dropdown to be fully visible.
+            // Estimate dropdown height to be about ~150px.
+            const requiredSpaceBottom = targetRect.bottom + 180;
+            
+            // If the element + dropdown overlaps into the keyboard area
+            if (requiredSpaceBottom > keyboardTop) {
+                const offset = requiredSpaceBottom - keyboardTop;
+                
+                modal.modalEl.style.transition = "transform 0.3s ease-out";
+                // Shift the entire modal box up
+                modal.modalEl.style.transform = `translateY(-${offset}px)`;
+            }
+        }, 300); // 300ms allows the keyboard sliding animation to finish
+    };
+
+    const onBlur = () => {
+        setTimeout(() => {
+            // Only reset if focus has completely left the modal's inputs
+            if (!modal.contentEl.contains(document.activeElement)) {
+                modal.modalEl.style.transition = "transform 0.3s ease-out";
+                modal.modalEl.style.transform = "";
+            }
+        }, 100);
+    };
+
+    modal.contentEl.addEventListener('focusin', onFocus);
+    modal.contentEl.addEventListener('focusout', onBlur);
+    
+    const originalOnClose = modal.onClose.bind(modal);
+    modal.onClose = () => {
+        modal.contentEl.removeEventListener('focusin', onFocus);
+        modal.contentEl.removeEventListener('focusout', onBlur);
+        // Reset transform on close just in case
+        modal.modalEl.style.transform = "";
+        originalOnClose();
+    };
+}
 
 export class AddAccountModal extends Modal {
     plugin: ObsidianAccountingPlugin;
@@ -23,6 +77,7 @@ export class AddAccountModal extends Modal {
     }
 
     onOpen() {
+        setupKeyboardPadding(this);
         const { contentEl } = this;
         contentEl.createEl("h2", { text: "Add new account" });
         contentEl.addClass("accounting-modal-content");
@@ -67,13 +122,20 @@ export class AddAccountModal extends Modal {
             .addButton(btn => btn
                 .setButtonText("Create account")
                 .setCta()
-                .onClick(() => {
-                    void this.createAccount();
-                    this.close();
+                .onClick(async () => {
+                    const success = await this.createAccount();
+                    if (success) {
+                        this.close();
+                    }
                 }));
     }
 
-    async createAccount() {
+    async createAccount(): Promise<boolean> {
+        if (!this.accountDate || !this.accountType || !this.accountName || !this.currency || !this.openingBalance) {
+            new Notice("Please provide all fields.");
+            return false;
+        }
+
         const fullAccountName = `${this.accountType}:${this.accountName}`;
         // Basic loose validation for beancount format
         // OPEN
@@ -87,10 +149,12 @@ export class AddAccountModal extends Modal {
             content += `\n${this.accountDate} balance ${fullAccountName} ${balance} ${this.currency}`;
         }
 
-        const success = await this.plugin.fileUtils.appendToBeancountFile(this.plugin.settings.beancountFilePath, content);
+        const success = await this.plugin.fileUtils.prependAccountToBeancountFile(this.plugin.settings.beancountFilePath, content);
         if (success) {
             new Notice("Account added to beancount file!");
+            return true;
         }
+        return false;
     }
 
     onClose() {
@@ -118,13 +182,14 @@ export class AddTransactionModal extends Modal {
         this.date = new Date().toISOString().split('T')[0];
         this.type = "Expense";
         this.description = "";
-        this.amount = "0";
+        this.amount = "";
         this.sourceAccount = "";
         this.targetAccount = "";
         this.tags = "";
     }
 
     async onOpen() {
+        setupKeyboardPadding(this);
         const { contentEl } = this;
 
         // Load accounts
@@ -164,6 +229,7 @@ export class AddTransactionModal extends Modal {
         new Setting(contentEl)
             .setName("Amount")
             .addText(text => text
+                .setPlaceholder("0.00")
                 .setValue(this.amount)
                 .onChange(value => this.amount = value));
 
@@ -199,13 +265,20 @@ export class AddTransactionModal extends Modal {
             .addButton(btn => btn
                 .setButtonText("Add transaction")
                 .setCta()
-                .onClick(() => {
-                    void this.createTransaction();
-                    this.close();
+                .onClick(async () => {
+                    const success = await this.createTransaction();
+                    if (success) {
+                        this.close();
+                    }
                 }));
     }
 
-    async createTransaction() {
+    async createTransaction(): Promise<boolean> {
+        if (!this.sourceAccount || !this.targetAccount || !this.date || !this.amount) {
+            new Notice("Please provide source account, target account, date and amount.");
+            return false;
+        }
+
         // Construct beancount entry
         /*
         2024-05-21 * "Description"
@@ -215,7 +288,7 @@ export class AddTransactionModal extends Modal {
         const amountNum = parseFloat(this.amount);
         if (isNaN(amountNum)) {
             new Notice("Invalid amount");
-            return;
+            return false;
         }
 
         const currency = this.plugin.settings.currencySymbol;
@@ -265,7 +338,197 @@ export class AddTransactionModal extends Modal {
         const success = await this.plugin.fileUtils.appendToBeancountFile(this.plugin.settings.beancountFilePath, content);
         if (success) {
             new Notice("Transaction added!");
+            return true;
         }
+        return false;
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}
+
+export class EditTransactionModal extends Modal {
+    plugin: ObsidianAccountingPlugin;
+    transaction: Transaction;
+
+    // Form fields
+    date: string;
+    type: string;
+    description: string;
+    amount: string;
+    sourceAccount: string;
+    targetAccount: string;
+    tags: string;
+    allAccounts: string[] = [];
+
+    constructor(app: App, plugin: ObsidianAccountingPlugin, transaction: Transaction) {
+        super(app);
+        this.plugin = plugin;
+        this.transaction = transaction;
+        
+        this.date = transaction.date;
+        this.description = transaction.description;
+        this.tags = transaction.tags.join(" ");
+
+        const sources = transaction.postings.filter(p => p.amount < 0);
+        const targets = transaction.postings.filter(p => p.amount > 0);
+        
+        this.sourceAccount = sources.length > 0 ? sources[0].account : "";
+        this.targetAccount = targets.length > 0 ? targets[0].account : "";
+        
+        const sum = targets.reduce((acc, p) => acc + p.amount, 0);
+        this.amount = sum.toString();
+
+        // Infer Type
+        this.type = "Transfer";
+        if (targets.some(t => t.account.startsWith("Expenses"))) {
+            this.type = "Expense";
+        } else if (targets.some(t => t.account.startsWith("Assets")) && sources.some(s => s.account.startsWith("Income"))) {
+            this.type = "Income";
+        } else if (sources.some(s => s.account.startsWith("Equity"))) {
+            this.type = "Transfer"; // Opening balance / synthetic handled as transfer
+        }
+    }
+
+    async onOpen() {
+        setupKeyboardPadding(this);
+        const { contentEl } = this;
+
+        this.allAccounts = await this.plugin.fileUtils.getAccounts(this.plugin.settings.beancountFilePath);
+
+        contentEl.createEl("h2", { text: "Edit transaction" });
+        contentEl.addClass("accounting-modal-content");
+
+        new Setting(contentEl)
+            .setName("Date")
+            .addText(text => text
+                .setValue(this.date)
+                .onChange(value => this.date = value));
+
+        new Setting(contentEl)
+            .setName("Type")
+            .addDropdown(drop => drop
+                .addOption("Expense", "Expense")
+                .addOption("Income", "Income")
+                .addOption("Transfer", "Transfer")
+                .setValue(this.type)
+                .onChange(value => this.type = value));
+
+        new Setting(contentEl)
+            .setName("Description")
+            .addText(text => text
+                .setValue(this.description)
+                .onChange(value => this.description = value));
+
+        new Setting(contentEl)
+            .setName("Tags")
+            .setDesc("Space separated (e.g. #vacation 2024)")
+            .addText(text => text
+                .setValue(this.tags)
+                .onChange(value => this.tags = value));
+
+        new Setting(contentEl)
+            .setName("Amount")
+            .addText(text => text
+                .setValue(this.amount)
+                .onChange(value => this.amount = value));
+
+        new Setting(contentEl)
+            .setName("Source account")
+            .addText(text => {
+                text.setValue(this.sourceAccount)
+                    .onChange(value => this.sourceAccount = value);
+                new AccountSuggest(this.app, text.inputEl, this.allAccounts);
+            });
+
+        new Setting(contentEl)
+            .setName("Target account")
+            .addText(text => {
+                text.setValue(this.targetAccount)
+                    .onChange(value => this.targetAccount = value);
+                new AccountSuggest(this.app, text.inputEl, this.allAccounts);
+            });
+
+        new Setting(contentEl)
+            .addButton(btn => btn
+                .setButtonText("Update transaction")
+                .setCta()
+                .onClick(async () => {
+                    const success = await this.updateTransaction();
+                    if (success) {
+                        this.close();
+                    }
+                }));
+    }
+
+    async updateTransaction(): Promise<boolean> {
+        if (!this.sourceAccount || !this.targetAccount || !this.date || !this.amount) {
+            new Notice("Please provide source account, target account, date and amount.");
+            return false;
+        }
+
+        const amountNum = parseFloat(this.amount);
+        if (isNaN(amountNum)) {
+            new Notice("Invalid amount");
+            return false;
+        }
+
+        if (this.transaction.lineStart === undefined || this.transaction.lineEnd === undefined) {
+            new Notice("Error: Cannot find transaction location in file.");
+            return false;
+        }
+
+        const currency = this.plugin.settings.currencySymbol;
+        let content = "";
+        let newDirectives = "";
+
+        // Collect new accounts missing
+        const accountsToCheck = [this.sourceAccount, this.targetAccount];
+        for (const account of accountsToCheck) {
+            if (account && !this.allAccounts.includes(account)) {
+                newDirectives += `${this.date} open ${account} ${currency}\n`;
+                this.allAccounts.push(account);
+            }
+        }
+
+        if (newDirectives.length > 0) {
+            await this.plugin.fileUtils.prependAccountToBeancountFile(this.plugin.settings.beancountFilePath, newDirectives.trim());
+        }
+
+        let tagString = "";
+        if (this.tags && this.tags.trim().length > 0) {
+            const tags = this.tags.split(" ").filter(t => t.length > 0);
+            tagString = tags.map(t => t.startsWith("#") ? t : "#" + t).join(" ");
+            tagString = " " + tagString;
+        }
+
+        content += `${this.date} * "${this.description}"${tagString}\n`;
+
+        if (this.type === "Expense") {
+            content += `  ${this.targetAccount} ${amountNum} ${currency}\n`;
+            content += `  ${this.sourceAccount} -${amountNum} ${currency}`;
+        } else if (this.type === "Income") {
+            content += `  ${this.sourceAccount} ${amountNum} ${currency}\n`;
+            content += `  ${this.targetAccount} -${amountNum} ${currency}`;
+        } else {
+            content += `  ${this.targetAccount} ${amountNum} ${currency}\n`;
+            content += `  ${this.sourceAccount} -${amountNum} ${currency}`;
+        }
+
+        const success = await this.plugin.fileUtils.replaceTransactionBlock(
+            this.plugin.settings.beancountFilePath, 
+            this.transaction.lineStart, 
+            this.transaction.lineEnd, 
+            content
+        );
+
+        if (success) {
+            new Notice("Transaction updated!");
+            return true;
+        }
+        return false;
     }
 
     onClose() {

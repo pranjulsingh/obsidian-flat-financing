@@ -39,6 +39,48 @@ export class FileUtils {
         }
     }
 
+    async prependAccountToBeancountFile(path: string, content: string): Promise<boolean> {
+        if (!await this.ensureFileExists(path)) return false;
+
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (!(file instanceof TFile)) return false;
+
+        try {
+            const currentContent = await this.app.vault.read(file);
+            const lines = currentContent.split('\n');
+            let insertIndex = 0;
+            if (lines.length > 0 && lines[0].startsWith("; Created")) {
+                insertIndex = 1;
+            }
+            lines.splice(insertIndex, 0, content, "");
+            await this.app.vault.modify(file, lines.join('\n'));
+            return true;
+        } catch (error) {
+            console.error("Error prepending to beancount file:", error);
+            new Notice("Error saving account to beancount file. Check console for details.");
+            return false;
+        }
+    }
+
+    async replaceTransactionBlock(path: string, startLine: number, endLine: number, newContent: string): Promise<boolean> {
+        if (!await this.ensureFileExists(path)) return false;
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (!(file instanceof TFile)) return false;
+
+        try {
+            const currentContent = await this.app.vault.read(file);
+            const lines = currentContent.split('\n');
+            const newLines = newContent.split('\n');
+            lines.splice(startLine, endLine - startLine + 1, ...newLines);
+            await this.app.vault.modify(file, lines.join("\n"));
+            return true;
+        } catch (e) {
+            console.error("Error updating transaction block", e);
+            new Notice("Error updating transaction. Check console.");
+            return false;
+        }
+    }
+
     async getBeanCountFile(path: string): Promise<TFile | null> {
         if (!await this.ensureFileExists(path)) return null;
 
