@@ -7,11 +7,12 @@ A simple [Beancount](https://beancount.github.io/docs/) integration for Obsidian
 ## Features
 
 - **Interactive Dashboard**:
+    - **Visualization View**: Top-level graphical timeline. Automatically calculates precise Date-wise Net Worth flow tracks, Income vs. Expense velocity overlays, and active Doughnut Account distributions.
     - **Summary View**: View account balances filtered by Date, Type (Assets, Income, etc.), and specific Accounts.
     - **Transactions View**: List transaction details with powerful filtering.
-    - **Tabs**: Easily switch between Summary and Transaction lists.
+    - **Tabs**: Easily switch between Visualization, Summary and Transaction lists!
     - **Multi-column Sorting**: Every table header is intuitively clickable. Easily swap between ascending/descending modes across financial metrics and descriptions.
-    - **Sticky Geometries**: Large financial datasets seamlessly drift via custom sticky scroll architectures, freezing header columns and bottom-line totals dynamically inside the frame!
+    - **Privacy Mode**: Seamlessly obscure raw global balances and timeline bounds using the strict 'Hide Balances' toggle while leaving temporal differential tools and transactional logs fully mapped.
 - **Data Export**:
     - **Export CSV / PDF**: Leverage out-of-the-box download capabilities translating your table configurations instantly into universal formats directly connected to native Obsidian capabilities.
 - **Advanced Filtering**:
@@ -43,12 +44,18 @@ A simple [Beancount](https://beancount.github.io/docs/) integration for Obsidian
 Go to **Settings > Obsidian Accounting**:
 - **Beancount File Path**: Enter the absolute path to your main `.beancount` file.
 - **Currency Symbol**: Set your default currency (e.g., `USD`, `EUR`).
+- **Hide Balances**: Globally masks raw Net Worth and explicit Dashboard coordinates tracking natively (rendering values mathematically to strings via `***` or rendering proportional `Percentages` automatically).
 
 ### 2. The Dashboard
 Open the dashboard via the Ribbon icon (Graph) or the Command Palette (`Accounting: Open Dashboard`).
 
+#### Visualization Tab (Default)
+- Graphically chart out native **Account Distribution** density maps natively across explicit filters!
+- Toggle legend boundaries pinning exact volume markers. 
+- Map robust isolated Timeline tracks spanning **Income vs Expense** flow!
+
 #### Summary Tab
-- View start/end balances for all accounts.
+- View start/end balances for all accounts natively mapped.
 - Filter by **Account Type** (Assets, Liabilities, etc.) or specific **Account Names**.
 
 #### Transactions Tab

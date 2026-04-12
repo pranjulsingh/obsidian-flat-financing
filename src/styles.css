@@ -88,6 +88,7 @@
     overflow-y: auto;
     max-height: calc(100% - 350px);
     margin-top: 10px;
+    padding-bottom: 50px;
 }
 
 .accounting-table {
@@ -139,8 +140,65 @@
     align-items: center;
 }
 
+/* Visualization Tab Styles */
+.accounting-kpi-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.accounting-kpi-card {
+    flex: 1;
+    min-width: 150px;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+    background-color: var(--background-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.accounting-kpi-title {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+.accounting-kpi-value {
+    font-size: 1.6em;
+    font-weight: bold;
+    color: var(--text-normal);
+}
+
+.accounting-charts-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    flex-direction: column;
+    padding-bottom: 50px;
+}
+
+.accounting-chart-box {
+    flex: 1;
+    min-height: 300px;
+    padding: 15px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background-color: var(--background-primary);
+    position: relative;
+}
+
 /* Responsive Mobile Adjustments */
 @media (max-width: 768px) {
+    .accounting-kpi-container {
+        flex-direction: column;
+    }
+    
     /* Explode tabs for easier tapping */
     .accounting-dashboard-tabs {
         flex-direction: row;

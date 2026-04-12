@@ -3,6 +3,7 @@ import ObsidianAccountingPlugin from "./main";
 import { Ledger } from "./ledger";
 import { AccountSuggest } from "./suggester";
 import { EditTransactionModal } from "./modals";
+import Chart from 'chart.js/auto';
 
 export const DASHBOARD_VIEW_TYPE = "obsidian-accounting-dashboard";
 
@@ -29,7 +30,9 @@ export class AccountingDashboardView extends ItemView {
     summarySortOrder: 'asc' | 'desc' = 'asc';
 
     // Tabs
-    activeTab: 'summary' | 'transactions' = 'summary';
+    activeTab: 'summary' | 'transactions' | 'visualization' = 'visualization';
+    chartInstances: Chart[] = [];
+    showChartAmounts: boolean = false;
 
     constructor(leaf: WorkspaceLeaf, plugin: ObsidianAccountingPlugin) {
         super(leaf);
@@ -47,6 +50,13 @@ export class AccountingDashboardView extends ItemView {
 
     getDisplayText() {
         return "Accounting dashboard";
+    }
+
+    formatMoney(amount: number): string {
+        if (this.plugin.settings.hideBalances) {
+            return `*** ${this.plugin.settings.currencySymbol}`;
+        }
+        return `${amount.toFixed(2)} ${this.plugin.settings.currencySymbol}`;
     }
 
     async onOpen() {
@@ -71,6 +81,15 @@ export class AccountingDashboardView extends ItemView {
         const tabContainer = container.createEl("div");
         tabContainer.addClass("accounting-dashboard-tabs");
 
+        const visualizationTab = tabContainer.createEl("div", { text: "Visualization" });
+        visualizationTab.addClass("accounting-tab-button");
+        if (this.activeTab === 'visualization') visualizationTab.addClass("active");
+
+        visualizationTab.onclick = () => {
+            this.activeTab = 'visualization';
+            void this.refresh();
+        };
+
         const summaryTab = tabContainer.createEl("div", { text: "Summary" });
         summaryTab.addClass("accounting-tab-button");
         if (this.activeTab === 'summary') summaryTab.addClass("active");
@@ -88,7 +107,6 @@ export class AccountingDashboardView extends ItemView {
             this.activeTab = 'transactions';
             void this.refresh();
         };
-
 
         // Controls Container
         const controls = container.createEl("div");
@@ -120,25 +138,30 @@ export class AccountingDashboardView extends ItemView {
                     })
             });
 
-        new Setting(dateRow)
+        const exportActions = new Setting(dateRow)
             .addButton(btn => btn
                 .setButtonText("Refresh data")
                 .onClick(() => {
                     void this.refresh(true); // Full refresh
-                }))
-            .addButton(btn => btn
-                .setButtonText("Export CSV")
-                .onClick(() => {
-                    this.exportToCSV();
-                }))
-            .addButton(btn => btn
-                .setButtonText("Export PDF (Markdown)")
-                .onClick(() => {
-                    void this.exportToMarkdown();
                 }));
 
-        // --- SUMMARY TAB FILTERS ---
-        if (this.activeTab === 'summary') {
+        if (this.activeTab !== 'visualization') {
+            exportActions
+                .addButton(btn => btn
+                    .setButtonText("Export CSV")
+                    .onClick(() => {
+                        this.exportToCSV();
+                    }))
+                .addButton(btn => btn
+                    .setButtonText("Export PDF (Markdown)")
+                    .onClick(() => {
+                        void this.exportToMarkdown();
+                    }));
+        }
+
+        // --- TAB FILTERS ---
+        // Render Summary filters (Type/Accounts) for Summary AND Visualization
+        if (this.activeTab === 'summary' || this.activeTab === 'visualization') {
             // Type Filters Row
             const typeRow = controls.createEl("div");
             typeRow.addClass("accounting-filter-row");
@@ -162,11 +185,12 @@ export class AccountingDashboardView extends ItemView {
             });
 
             // Account Filter Row
-            const accRow = controls.createEl("div");
-            accRow.addClass("accounting-row");
+            if (this.activeTab === 'summary') {
+                const accRow = controls.createEl("div");
+                accRow.addClass("accounting-row");
 
-            const accLabel = accRow.createSpan({ text: "Filter accounts: " });
-            accLabel.addClass("accounting-filter-label");
+                const accLabel = accRow.createSpan({ text: "Filter accounts: " });
+                accLabel.addClass("accounting-filter-label");
 
             const accInputDiv = accRow.createEl("div");
             const accInput = accInputDiv.createEl("input", { type: "text", placeholder: "Search account..." });
@@ -190,13 +214,14 @@ export class AccountingDashboardView extends ItemView {
                     }
                 });
 
-            // Selected Accounts Container
-            const selectedAccsContainer = controls.createEl("div");
-            selectedAccsContainer.addClass("accounting-pill-container");
-            this.renderSelectedAccounts(selectedAccsContainer, container, this.selectedAccounts, 'summary');
+                // Selected Accounts Container
+                const selectedAccsContainer = controls.createEl("div");
+                selectedAccsContainer.addClass("accounting-pill-container");
+                this.renderSelectedAccounts(selectedAccsContainer, container, this.selectedAccounts, 'summary');
+            }
         }
 
-        // --- TRANSACTIONS TAB FILTERS ---
+        // Render Transaction filters (Tags/Source/Target) ONLY for Transactions
         if (this.activeTab === 'transactions') {
             // 1. Tag Filter
             const tagRow = controls.createEl("div");
@@ -274,9 +299,293 @@ export class AccountingDashboardView extends ItemView {
     renderCurrentView(container: HTMLElement) {
         if (this.activeTab === 'summary') {
             this.renderTable(container);
-        } else {
+        } else if (this.activeTab === 'transactions') {
             this.renderTransactionsTable(container);
+        } else if (this.activeTab === 'visualization') {
+            this.renderVisualizationView(container);
         }
+    }
+
+    renderVisualizationView(container: HTMLElement) {
+        let tableContainer = container.querySelector(".accounting-table-container");
+        if (!tableContainer) return;
+        tableContainer.empty();
+
+        // Clean up old charts strictly tied to this container session
+        this.chartInstances.forEach(c => c.destroy());
+        this.chartInstances = [];
+
+        // Apply Global Filters dynamically
+        let balances = this.ledger.getBalances(this.startDate, this.endDate, this.plugin.settings);
+        balances = balances.filter(bal => {
+            if (this.selectedTypes.size > 0 && !this.selectedTypes.has(bal.type)) return false;
+            if (this.selectedAccounts.size > 0 && !this.selectedAccounts.has(bal.account)) return false;
+            return true;
+        });
+
+        let transactions = this.ledger.getTransactions(this.startDate, this.endDate, this.plugin.settings);
+        transactions = transactions.filter(t => {
+            if (this.tagFilter) {
+                const filterTag = this.tagFilter.startsWith("#") ? this.tagFilter.substring(1) : this.tagFilter;
+                if (!t.tags.some(tag => tag.toLowerCase().includes(filterTag.toLowerCase()))) return false;
+            }
+            if (this.selectedSourceAccounts.size > 0 && !t.postings.some(p => p.amount < 0 && this.selectedSourceAccounts.has(p.account))) return false;
+            if (this.selectedTargetAccounts.size > 0 && !t.postings.some(p => p.amount > 0 && this.selectedTargetAccounts.has(p.account))) return false;
+            return true;
+        });
+
+        const currency = this.plugin.settings.currencySymbol;
+
+        // --- KPI Generation ---
+        let assets = 0;
+        let liabilities = 0;
+        let income = 0;
+        let expenses = 0;
+
+        balances.forEach(b => {
+             if (b.type === 'Assets') assets += b.currentBalance;
+             if (b.type === 'Liabilities') liabilities += b.currentBalance;
+             if (b.type === 'Income') income += b.difference; // the net change exactly within the date range
+             if (b.type === 'Expenses') expenses += b.difference;
+        });
+
+        // "Net Worth should be exclusively derived from Assets + Liabilities" precisely as mathematically handled via signs
+        const netWorth = assets + liabilities; 
+        const totalEarnings = Math.abs(income);
+        const monthlyExpense = Math.abs(expenses);
+
+        const kpiContainer = tableContainer.createEl("div");
+        kpiContainer.addClass("accounting-kpi-container");
+
+        this.createKpiCard(kpiContainer, "Net Worth", this.formatMoney(netWorth));
+        this.createKpiCard(kpiContainer, "Total Earnings", `${totalEarnings.toFixed(2)} ${currency}`);
+        this.createKpiCard(kpiContainer, "Periodic Expenses", `${monthlyExpense.toFixed(2)} ${currency}`);
+
+        // --- Chart Generation ---
+        const chartsContainer = tableContainer.createEl("div");
+        chartsContainer.addClass("accounting-charts-container");
+
+        // Options toggle for charts
+        const toggleRow = chartsContainer.createEl("div");
+        toggleRow.style.display = "flex";
+        toggleRow.style.justifyContent = "flex-end";
+        toggleRow.style.width = "100%";
+        
+        const labelParams = toggleRow.createEl("label");
+        labelParams.style.display = "flex";
+        labelParams.style.alignItems = "center";
+        labelParams.style.gap = "8px";
+        labelParams.style.cursor = "pointer";
+        labelParams.style.fontSize = "0.9em";
+        labelParams.style.color = "var(--text-muted)";
+        
+        const amntCb = labelParams.createEl("input", { type: "checkbox" });
+        amntCb.checked = this.showChartAmounts;
+        amntCb.onchange = () => {
+            this.showChartAmounts = amntCb.checked;
+            this.renderVisualizationView(container);
+        };
+        labelParams.createSpan({ text: "Display legend and amounts in distribution" });
+
+        // 1. Account Distribution Array Doughnut (Per account)
+        const typeChartBox = chartsContainer.createEl("div");
+        typeChartBox.addClass("accounting-chart-box");
+        const typeCanvas = typeChartBox.createEl("canvas");
+        
+        const dataVals = balances.map(b => Math.abs(b.currentBalance));
+        const totalVal = dataVals.reduce((a, b) => a + b, 0);
+        const labels = balances.map((b, i) => {
+            if (!this.showChartAmounts) return b.account;
+            let valStr = this.plugin.settings.hideBalances ? 
+                (totalVal > 0 ? `${((dataVals[i] / totalVal) * 100).toFixed(1)}%` : `0%`) : 
+                `${dataVals[i].toFixed(2)} ${currency}`;
+            return `${b.account} [${valStr}]`;
+        });
+        const bgColors = balances.map((_, i) => `hsl(${(i * 360 / Math.max(balances.length, 1)) % 360}, 70%, 50%)`);
+
+        const typeChart = new Chart(typeCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataVals,
+                    backgroundColor: bgColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Account Distribution' },
+                    legend: { display: this.showChartAmounts, position: 'right' },
+                    tooltip: {
+                        callbacks: {
+                            label: (context: any) => {
+                                let baseLabel = context.label.split(' [')[0];
+                                if (!this.plugin.settings.hideBalances) {
+                                    return `${baseLabel}: ${(context.raw as number).toFixed(2)} ${currency}`;
+                                }
+                                const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                                const percentage = total > 0 ? (((context.raw as number) / total) * 100).toFixed(1) + "%" : "0%";
+                                return `${baseLabel}: ${percentage}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        this.chartInstances.push(typeChart);
+
+        // Filters isolated from "Type" rule for line graphs
+        let baseBalancesIgnoredType = this.ledger.getBalances(this.startDate, this.endDate, this.plugin.settings);
+        let strictlyAccountFiltered = baseBalancesIgnoredType.filter(bal => {
+            if (this.selectedAccounts.size > 0 && !this.selectedAccounts.has(bal.account)) return false;
+            return true;
+        });
+
+        // 2. Transaction Density Flow Timeline & Net Worth Tracking
+        const dateMap: { [date: string]: { income: number, expense: number, netWorthImpact: number } } = {};
+        
+        // Setup dates inside bounds
+        transactions.forEach(t => {
+            const date = t.date;
+            if (!dateMap[date]) dateMap[date] = { income: 0, expense: 0, netWorthImpact: 0 };
+            
+            // Derive fundamental transaction sets honoring global filters precisely
+            const isAccountSelected = (acc: string) => balances.some(b => b.account === acc);
+            const isAccountSelectedWithoutTypeLock = (acc: string) => strictlyAccountFiltered.some(b => b.account === acc);
+
+            let incomeImpact = t.postings
+                .filter(p => isAccountSelectedWithoutTypeLock(p.account) && p.account.startsWith('Income'))
+                .reduce((val, p) => val + p.amount, 0);
+
+            let expenseImpact = t.postings
+                .filter(p => isAccountSelectedWithoutTypeLock(p.account) && p.account.startsWith('Expenses'))
+                .reduce((val, p) => val + p.amount, 0);
+
+            let nwImpact = t.postings
+                .filter(p => isAccountSelected(p.account) && (p.account.startsWith('Assets') || p.account.startsWith('Liabilities')))
+                .reduce((val, p) => val + p.amount, 0);
+
+            dateMap[date].income += Math.abs(incomeImpact);
+            dateMap[date].expense += expenseImpact;
+            dateMap[date].netWorthImpact += nwImpact;
+        });
+
+        const sortedDates = Object.keys(dateMap).sort();
+        
+        // Arrays for plots
+        const incData: number[] = [];
+        const expData: number[] = [];
+        const nwData: number[] = [];
+
+        // Base Starting net worth resolved strictly prior to timeline mapping (to allow accurate charting)
+        let trackingNetWorth = balances.filter(b => b.type === 'Assets' || b.type === 'Liabilities').reduce((acc, b) => acc + b.startBalance, 0);
+
+        sortedDates.forEach(d => {
+            incData.push(dateMap[d].income);
+            expData.push(dateMap[d].expense);
+            trackingNetWorth += dateMap[d].netWorthImpact;
+            nwData.push(trackingNetWorth);
+        });
+
+        // 2: Smooth Line Chart (Income vs Expense)
+        const transChartBox = chartsContainer.createEl("div");
+        transChartBox.addClass("accounting-chart-box");
+        const transCanvas = transChartBox.createEl("canvas");
+
+        const transChart = new Chart(transCanvas, {
+            type: 'line',
+            data: {
+                labels: sortedDates,
+                datasets: [
+                    { 
+                        label: 'Income', 
+                        data: incData, 
+                        borderColor: '#60a5fa', 
+                        backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    { 
+                        label: 'Expense', 
+                        data: expData, 
+                        borderColor: '#facc15', 
+                        backgroundColor: 'rgba(250, 204, 21, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Income vs Expense' }
+                },
+                scales: {
+                    x: { stacked: false },
+                    y: { stacked: false }
+                }
+            }
+        });
+        this.chartInstances.push(transChart);
+
+        // 3: Smooth Line Chart (Date-wise Net Worth)
+        const nwChartBox = chartsContainer.createEl("div");
+        nwChartBox.addClass("accounting-chart-box");
+        const nwCanvas = nwChartBox.createEl("canvas");
+
+        const nwChart = new Chart(nwCanvas, {
+            type: 'line',
+            data: {
+                labels: sortedDates,
+                datasets: [
+                    { 
+                        label: 'Net Worth', 
+                        data: nwData, 
+                        borderColor: '#4ade80', 
+                        backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                        fill: true,
+                        tension: 0.4 
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Date-wise Net Worth' },
+                    tooltip: {
+                        callbacks: {
+                            label: (context: any) => {
+                                if (this.plugin.settings.hideBalances) {
+                                    return `${context.dataset.label}: ***`;
+                                }
+                                return `${context.dataset.label}: ${(context.raw as number).toFixed(2)} ${currency}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { display: !this.plugin.settings.hideBalances } },
+                    y: { ticks: { display: !this.plugin.settings.hideBalances } }
+                }
+            }
+        });
+        this.chartInstances.push(nwChart);
+    }
+
+    createKpiCard(container: HTMLElement, title: string, value: string) {
+        const card = container.createEl("div");
+        card.addClass("accounting-kpi-card");
+        
+        const t = card.createEl("div", { text: title });
+        t.addClass("accounting-kpi-title");
+
+        const v = card.createEl("div", { text: value });
+        v.addClass("accounting-kpi-value");
     }
 
     renderSelectedAccounts(container: HTMLElement, viewContainer: HTMLElement, set: Set<string>, tabContext: string) {
@@ -376,13 +685,12 @@ export class AccountingDashboardView extends ItemView {
         balances.forEach(bal => {
             const row = tbody.createEl("tr");
 
-            // Cells
             this.createCell(row, bal.type);
             this.createCell(row, bal.account);
-            this.createCell(row, `${bal.startBalance.toFixed(2)} ${currency}`);
-            this.createCell(row, `${bal.endBalance.toFixed(2)} ${currency}`);
+            this.createCell(row, this.formatMoney(bal.startBalance));
+            this.createCell(row, this.formatMoney(bal.endBalance));
             this.createCell(row, `${bal.difference.toFixed(2)} ${currency}`);
-            this.createCell(row, `${bal.currentBalance.toFixed(2)} ${currency}`);
+            this.createCell(row, this.formatMoney(bal.currentBalance));
 
             totalStart += bal.startBalance;
             totalEnd += bal.endBalance;
@@ -397,10 +705,10 @@ export class AccountingDashboardView extends ItemView {
 
         this.createCell(footerRow, "TOTAL");
         this.createCell(footerRow, `(${balances.length} filtered)`); // Account placeholder
-        this.createCell(footerRow, `${totalStart.toFixed(2)} ${currency}`);
-        this.createCell(footerRow, `${totalEnd.toFixed(2)} ${currency}`);
+        this.createCell(footerRow, this.formatMoney(totalStart));
+        this.createCell(footerRow, this.formatMoney(totalEnd));
         this.createCell(footerRow, `${totalDiff.toFixed(2)} ${currency}`);
-        this.createCell(footerRow, `${totalCurr.toFixed(2)} ${currency}`);
+        this.createCell(footerRow, this.formatMoney(totalCurr));
     }
 
     renderTransactionsTable(container: HTMLElement) {
@@ -617,15 +925,15 @@ export class AccountingDashboardView extends ItemView {
         balances.forEach(bal => {
             rows.push([
                 bal.type, bal.account,
-                `${bal.startBalance.toFixed(2)} ${currency}`,
-                `${bal.endBalance.toFixed(2)} ${currency}`,
+                this.formatMoney(bal.startBalance),
+                this.formatMoney(bal.endBalance),
                 `${bal.difference.toFixed(2)} ${currency}`,
-                `${bal.currentBalance.toFixed(2)} ${currency}`
+                this.formatMoney(bal.currentBalance)
             ]);
             totalStart += bal.startBalance; totalEnd += bal.endBalance; totalDiff += bal.difference; totalCurr += bal.currentBalance;
         });
 
-        rows.push(["TOTAL", `(${balances.length} filtered)`, `${totalStart.toFixed(2)} ${currency}`, `${totalEnd.toFixed(2)} ${currency}`, `${totalDiff.toFixed(2)} ${currency}`, `${totalCurr.toFixed(2)} ${currency}`]);
+        rows.push(["TOTAL", `(${balances.length} filtered)`, this.formatMoney(totalStart), this.formatMoney(totalEnd), `${totalDiff.toFixed(2)} ${currency}`, this.formatMoney(totalCurr)]);
 
         return { headers, rows };
     }

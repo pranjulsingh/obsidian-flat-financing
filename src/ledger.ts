@@ -232,17 +232,7 @@ export class Ledger {
         }
 
         // Calculate balances
-
         for (const t of this.transactions) {
-            if (settings && !settings.showOpeningBalances && t.isSynthetic) {
-                continue;
-            }
-
-            const isTransfer = t.postings.length > 1 && t.postings.every(p => !p.account.startsWith("Income") && !p.account.startsWith("Expenses") && !p.account.startsWith("Equity"));
-            if (settings && !settings.showTransfers && isTransfer) {
-                continue;
-            }
-
             for (const p of t.postings) {
                 const res = results.get(p.account);
                 if (!res) continue;
@@ -308,9 +298,6 @@ export class Ledger {
     getTransactions(startDate: string, endDate: string, settings?: any): Transaction[] {
         return this.transactions.filter(t => {
             if (t.date < startDate || t.date > endDate) return false;
-            if (settings && !settings.showOpeningBalances && t.isSynthetic) return false;
-            const isTransfer = t.postings.length > 1 && t.postings.every(p => !p.account.startsWith("Income") && !p.account.startsWith("Expenses") && !p.account.startsWith("Equity"));
-            if (settings && !settings.showTransfers && isTransfer) return false;
             return true;
         });
     }
