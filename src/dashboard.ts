@@ -29,8 +29,24 @@ export class AccountingDashboardView extends ItemView {
     summarySortColumn: string = "Account";
     summarySortOrder: 'asc' | 'desc' = 'asc';
 
+    // Import Tab State
+    csvData: string[][] = [];
+    csvHeaders: string[] = [];
+    hasCsvHeader: boolean = true;
+    csvDelimiter: string = ',';
+    rawCsvText: string = "";
+    csvMapping: { [key: string]: number | null } = {
+        date: null,
+        type: null,
+        description: null,
+        tags: null,
+        amount: null,
+        source: null,
+        target: null
+    };
+
     // Tabs
-    activeTab: 'summary' | 'transactions' | 'visualization' = 'visualization';
+    activeTab: 'summary' | 'transactions' | 'visualization' | 'import' = 'visualization';
     chartInstances: Chart[] = [];
     showChartAmounts: boolean = false;
 
@@ -108,11 +124,21 @@ export class AccountingDashboardView extends ItemView {
             void this.refresh();
         };
 
+        const importTab = tabContainer.createEl("div", { text: "Import data" });
+        importTab.addClass("accounting-tab-button");
+        if (this.activeTab === 'import') importTab.addClass("active");
+
+        importTab.onclick = () => {
+            this.activeTab = 'import';
+            void this.refresh();
+        };
+
         // Controls Container
         const controls = container.createEl("div");
         controls.addClass("accounting-dashboard-controls");
 
-        // Date Row (Shared)
+        if (this.activeTab !== 'import') {
+            // Date Row (Shared)
         const dateRow = controls.createEl("div");
         dateRow.addClass("accounting-row");
 
@@ -287,6 +313,7 @@ export class AccountingDashboardView extends ItemView {
             selectedTargetContainer.addClass("accounting-pill-container");
             this.renderSelectedAccounts(selectedTargetContainer, container, this.selectedTargetAccounts, 'transactions');
         }
+        } // End of activeTab !== 'import' wrapper
 
 
         // Table Container
@@ -303,6 +330,8 @@ export class AccountingDashboardView extends ItemView {
             this.renderTransactionsTable(container);
         } else if (this.activeTab === 'visualization') {
             this.renderVisualizationView(container);
+        } else if (this.activeTab === 'import') {
+            this.renderImportView(container);
         }
     }
 
@@ -982,5 +1011,261 @@ export class AccountingDashboardView extends ItemView {
         rows.push(["TOTAL", "", "", "", "", `${totalAmount.toFixed(2)} ${currency}`]);
 
         return { headers, rows };
+    }
+
+    renderImportView(container: HTMLElement) {
+        let tableContainer = container.querySelector(".accounting-table-container");
+        if (!tableContainer) return;
+        tableContainer.empty();
+
+        const importWrapper = tableContainer.createEl("div");
+        importWrapper.addClass("accounting-import-wrapper");
+        importWrapper.style.padding = "20px";
+
+        importWrapper.createEl("h3", { text: "Import CSV Data" });
+
+        // Step 1: File Input
+        const fileRow = importWrapper.createEl("div");
+        fileRow.addClass("accounting-row");
+        fileRow.style.marginBottom = "20px";
+        
+        const fileInput = fileRow.createEl("input", { type: "file" });
+        fileInput.accept = ".csv";
+
+        const headerRow = importWrapper.createEl("div");
+        headerRow.addClass("accounting-row");
+        headerRow.style.marginBottom = "20px";
+        
+        const delimiterLabel = headerRow.createEl("label");
+        delimiterLabel.addClass("accounting-flex-item");
+        delimiterLabel.style.marginRight = "15px";
+        delimiterLabel.createSpan({ text: "Delimiter: " });
+        const delimiterSelect = delimiterLabel.createEl("select");
+        delimiterSelect.addClass("dropdown");
+        delimiterSelect.createEl("option", { value: ",", text: "Comma (,)"});
+        delimiterSelect.createEl("option", { value: ";", text: "Semicolon (;)"});
+        delimiterSelect.createEl("option", { value: "|", text: "Pipe (|)"});
+        delimiterSelect.createEl("option", { value: "\t", text: "Tab" });
+        delimiterSelect.value = this.csvDelimiter;
+        
+        delimiterSelect.onchange = () => {
+            this.csvDelimiter = delimiterSelect.value;
+            if (this.rawCsvText) {
+                this.parseCsv(this.rawCsvText);
+                this.renderImportView(container);
+            }
+        };
+
+        const headerLabel = headerRow.createEl("label");
+        headerLabel.addClass("accounting-flex-item");
+        const headerCheckbox = headerLabel.createEl("input", { type: "checkbox" });
+        headerCheckbox.checked = this.hasCsvHeader;
+        headerLabel.createSpan({ text: "File contains headers" });
+        headerCheckbox.onchange = () => {
+            this.hasCsvHeader = headerCheckbox.checked;
+            if (this.csvData && this.csvData.length > 0) {
+                if (this.hasCsvHeader) {
+                    this.csvHeaders = this.csvData[0];
+                } else {
+                    this.csvHeaders = this.csvData[0].map((_, i) => `Column ${i + 1}`);
+                }
+            }
+            this.renderImportView(container);
+        };
+
+        fileInput.onchange = (e: any) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target?.result as string;
+                this.rawCsvText = text;
+                this.parseCsv(text);
+                this.renderImportView(container); // Refresh UI with mapping
+            };
+            reader.readAsText(file);
+        };
+
+        // If data loaded, show Mapper
+        if (this.csvData.length > 0) {
+            importWrapper.createEl("h4", { text: "Map Columns" });
+
+            const mappingGrid = importWrapper.createEl("div");
+            mappingGrid.style.display = "grid";
+            mappingGrid.style.gridTemplateColumns = "150px 1fr";
+            mappingGrid.style.gap = "10px";
+            mappingGrid.style.marginBottom = "20px";
+            mappingGrid.style.alignItems = "center";
+
+            const options: { value: string, text: string }[] = [{ value: "-1", text: "-- Select Column --" }];
+            this.csvHeaders.forEach((h, i) => options.push({ value: i.toString(), text: h }));
+
+            const createMappingRow = (key: keyof typeof this.csvMapping, label: string, required: boolean) => {
+                const titleSpan = mappingGrid.createEl("div", { text: label + (required ? " *" : "") });
+                titleSpan.style.fontWeight = "bold";
+                if (required) titleSpan.style.color = "var(--text-accent)";
+                
+                const select = mappingGrid.createEl("select");
+                select.addClass("dropdown");
+                options.forEach(opt => select.createEl("option", { value: opt.value, text: opt.text }));
+                
+                if (this.csvMapping[key] !== null) {
+                    select.value = this.csvMapping[key]!.toString();
+                }
+
+                select.onchange = () => {
+                    const val = parseInt(select.value);
+                    this.csvMapping[key] = val >= 0 ? val : null;
+                };
+            };
+
+            createMappingRow('date', 'Transaction Date', true);
+            createMappingRow('amount', 'Amount', true);
+            createMappingRow('source', 'Source Account', true);
+            createMappingRow('target', 'Target Account', true);
+            createMappingRow('type', 'Type', false);
+            createMappingRow('description', 'Description', false);
+            createMappingRow('tags', 'Tags', false);
+
+            const btnRow = importWrapper.createEl("div");
+            new ButtonComponent(btnRow)
+                .setButtonText("Execute Import")
+                .setCta()
+                .onClick(() => this.executeImport());
+        }
+    }
+
+    parseCsvLine(text: string, delimiter: string = ','): string[] {
+        const result: string[] = [];
+        let cur = '';
+        let inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            if (char === '"') {
+                if (inQuotes && text[i + 1] === '"') {
+                    cur += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === delimiter && !inQuotes) {
+                result.push(cur);
+                cur = '';
+            } else {
+                cur += char;
+            }
+        }
+        result.push(cur);
+        return result.map(s => s.trim());
+    }
+
+    parseCsv(text: string) {
+        const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+        this.csvData = lines.map(l => this.parseCsvLine(l, this.csvDelimiter));
+        
+        if (this.csvData.length === 0) return;
+
+        if (this.hasCsvHeader) {
+            this.csvHeaders = this.csvData[0];
+        } else {
+            this.csvHeaders = this.csvData[0].map((_, i) => `Column ${i + 1}`);
+        }
+        
+        // Reset mapping
+        Object.keys(this.csvMapping).forEach(k => this.csvMapping[k] = null);
+    }
+
+    async executeImport() {
+        const { date, amount, source, target, type, description, tags } = this.csvMapping;
+
+        if (date === null || amount === null || source === null || target === null) {
+            new Notice("Please map all mandatory fields (Date, Amount, Source, Target).");
+            return;
+        }
+
+        let transactionsString = "";
+        const currency = this.plugin.settings.currencySymbol;
+
+        const startIndex = this.hasCsvHeader ? 1 : 0;
+        let successCount = 0;
+
+        for (let i = startIndex; i < this.csvData.length; i++) {
+            const row = this.csvData[i];
+            if (row.length === 0) continue;
+
+            const tDateStr = row[date];
+            let tAmountStr = row[amount];
+            const tSource = row[source];
+            const tTarget = row[target];
+
+            if (!tDateStr || !tAmountStr || !tSource || !tTarget) continue;
+
+            // Date validation (Ensure YYYY-MM-DD or attempt basic parsing)
+            let tDate = tDateStr;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(tDate)) {
+                // Try converting formats like MM/DD/YYYY to YYYY-MM-DD
+                const dObj = new Date(tDate);
+                if (!isNaN(dObj.getTime())) {
+                    tDate = dObj.toISOString().split('T')[0];
+                } else {
+                    continue; // Skip invalid dates
+                }
+            }
+
+            // Clean amount
+            tAmountStr = tAmountStr.replace(/[^0-9.-]/g, '');
+            const tAmt = parseFloat(tAmountStr);
+            if (isNaN(tAmt)) continue;
+            const absoluteAmt = Math.abs(tAmt); // Ensure proper sign logic below
+
+            // Optional
+            const tType = type !== null ? row[type] : "Expense";
+            let tDesc = description !== null && row[description] ? row[description] : "";
+            const tTagsStr = tags !== null && row[tags] ? row[tags] : "";
+
+            // Format Desc
+            if (tType && tType.trim() !== "") {
+                if (tDesc) {
+                    tDesc = `[${tType}] ${tDesc}`;
+                } else {
+                    tDesc = `[${tType}]`;
+                }
+            } else {
+                if (!tDesc) tDesc = "[Expense]"; // Default to Expense if totally unmapped and empty
+            }
+            if (!tDesc) tDesc = "Imported Transaction";
+
+            // Format Tags
+            let rawTags = tTagsStr.split(/[\s,]+/).filter(t => t.length > 0);
+            let formattedTags = rawTags.map(t => t.startsWith('#') ? t : `#${t}`).join(" ");
+
+            // Beancount Structure
+            const line1 = `${tDate} * "${tDesc}" ${formattedTags}\n`;
+            // Beancount uses negative for Source (outgoing) and positive for Target (incoming)
+            const line2 = `  ${tSource} -${absoluteAmt.toFixed(2)} ${currency}\n`;
+            const line3 = `  ${tTarget} ${absoluteAmt.toFixed(2)} ${currency}\n`;
+
+            transactionsString += line1 + line2 + line3 + "\n";
+            successCount++;
+        }
+
+        if (successCount === 0) {
+            new Notice("No valid transactions found to import. Check date & amount formats.");
+            return;
+        }
+
+        const success = await this.plugin.fileUtils.appendToBeancountFile(this.plugin.settings.beancountFilePath, transactionsString.trim());
+        
+        if (success) {
+            new Notice(`Successfully imported ${successCount} transactions!`);
+            this.activeTab = 'transactions';
+            
+            // Clean state
+            this.csvData = [];
+            this.csvHeaders = [];
+            
+            void this.refresh(true);
+        }
     }
 }
