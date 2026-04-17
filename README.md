@@ -33,10 +33,19 @@ A simple [Beancount](https://beancount.github.io/docs/) integration for Obsidian
 
 ## Installation
 
+### Method 1: Using BRAT (Recommended for Beta Testing)
+1. Install the **[Obsidian42 - BRAT](https://github.com/TfTHacker/obsidian42-brat)** plugin from the Community Plugins in Obsidian.
+2. Enable the BRAT plugin.
+3. In Obsidian, open the command palette and run `BRAT: Add a beta plugin for testing`.
+4. Paste the URL of this GitHub repository.
+5. Click **Add Plugin** and wait for BRAT to confirm the installation.
+6. Enable the plugin in your Community Plugins settings.
+
+### Method 2: Manual Installation
 1.  Clone this repository into your vault's `.obsidian/plugins/` directory.
 2.  Run `npm install` to install dependencies.
 3.  Run `npm run build` to compile the plugin.
-4.  Reload Obsidian and enable **Obsidian Accounting** in Community Plugins.
+4.  Reload Obsidian and enable the plugin in Community Plugins.
 
 ## Usage
 
