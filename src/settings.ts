@@ -5,12 +5,14 @@ export interface AccountingPluginSettings {
     beancountFilePath: string;
     currencySymbol: string;
     hideBalances: boolean;
+    expenseTargets: Record<string, Record<string, number>>; // Account -> YYYY-MM -> Target
 }
 
 export const DEFAULT_SETTINGS: AccountingPluginSettings = {
     beancountFilePath: "accounting.beancount",
     currencySymbol: "USD",
-    hideBalances: false
+    hideBalances: false,
+    expenseTargets: {}
 }
 
 export class AccountingSettingTab extends PluginSettingTab {

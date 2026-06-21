@@ -46,9 +46,13 @@ export class AccountingDashboardView extends ItemView {
     };
 
     // Tabs
-    activeTab: 'summary' | 'transactions' | 'visualization' | 'import' = 'visualization';
+    activeTab: 'summary' | 'transactions' | 'visualization' | 'import' | 'expenseTarget' = 'visualization';
     chartInstances: Chart[] = [];
     showChartAmounts: boolean = false;
+
+    // Expense Target State
+    targetStartMonth: string;
+    targetEndMonth: string;
 
     constructor(leaf: WorkspaceLeaf, plugin: ObsidianAccountingPlugin) {
         super(leaf);
@@ -58,6 +62,9 @@ export class AccountingDashboardView extends ItemView {
         const now = new Date();
         this.startDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
         this.endDate = now.toISOString().split('T')[0];
+
+        this.targetStartMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        this.targetEndMonth = this.targetStartMonth;
     }
 
     getViewType() {
@@ -106,6 +113,15 @@ export class AccountingDashboardView extends ItemView {
             void this.refresh();
         };
 
+        const expenseTargetTab = tabContainer.createEl("div", { text: "Expense Target" });
+        expenseTargetTab.addClass("accounting-tab-button");
+        if (this.activeTab === 'expenseTarget') expenseTargetTab.addClass("active");
+
+        expenseTargetTab.onclick = () => {
+            this.activeTab = 'expenseTarget';
+            void this.refresh();
+        };
+
         const summaryTab = tabContainer.createEl("div", { text: "Summary" });
         summaryTab.addClass("accounting-tab-button");
         if (this.activeTab === 'summary') summaryTab.addClass("active");
@@ -142,27 +158,51 @@ export class AccountingDashboardView extends ItemView {
         const dateRow = controls.createEl("div");
         dateRow.addClass("accounting-row");
 
-        new Setting(dateRow)
-            .setName("Start date")
-            .addText(text => {
-                text.inputEl.type = "date";
-                text.setValue(this.startDate)
-                    .onChange((val) => {
-                        this.startDate = val;
-                        this.renderCurrentView(container);
-                    })
-            });
+        if (this.activeTab === 'expenseTarget') {
+            new Setting(dateRow)
+                .setName("Start month")
+                .addText(text => {
+                    text.inputEl.type = "month";
+                    text.setValue(this.targetStartMonth)
+                        .onChange((val) => {
+                            this.targetStartMonth = val;
+                            this.renderCurrentView(container);
+                        })
+                });
 
-        new Setting(dateRow)
-            .setName("End date")
-            .addText(text => {
-                text.inputEl.type = "date";
-                text.setValue(this.endDate)
-                    .onChange((val) => {
-                        this.endDate = val;
-                        this.renderCurrentView(container);
-                    })
-            });
+            new Setting(dateRow)
+                .setName("End month")
+                .addText(text => {
+                    text.inputEl.type = "month";
+                    text.setValue(this.targetEndMonth)
+                        .onChange((val) => {
+                            this.targetEndMonth = val;
+                            this.renderCurrentView(container);
+                        })
+                });
+        } else {
+            new Setting(dateRow)
+                .setName("Start date")
+                .addText(text => {
+                    text.inputEl.type = "date";
+                    text.setValue(this.startDate)
+                        .onChange((val) => {
+                            this.startDate = val;
+                            this.renderCurrentView(container);
+                        })
+                });
+
+            new Setting(dateRow)
+                .setName("End date")
+                .addText(text => {
+                    text.inputEl.type = "date";
+                    text.setValue(this.endDate)
+                        .onChange((val) => {
+                            this.endDate = val;
+                            this.renderCurrentView(container);
+                        })
+                });
+        }
 
         const exportActions = new Setting(dateRow)
             .addButton(btn => btn
@@ -171,7 +211,7 @@ export class AccountingDashboardView extends ItemView {
                     void this.refresh(true); // Full refresh
                 }));
 
-        if (this.activeTab !== 'visualization') {
+        if (this.activeTab !== 'visualization' && this.activeTab !== 'expenseTarget') {
             exportActions
                 .addButton(btn => btn
                     .setButtonText("Export CSV")
@@ -330,8 +370,224 @@ export class AccountingDashboardView extends ItemView {
             this.renderTransactionsTable(container);
         } else if (this.activeTab === 'visualization') {
             this.renderVisualizationView(container);
+        } else if (this.activeTab === 'expenseTarget') {
+            this.renderExpenseTargetView(container);
         } else if (this.activeTab === 'import') {
             this.renderImportView(container);
+        }
+    }
+
+    renderExpenseTargetView(container: HTMLElement) {
+        let tableContainer = container.querySelector(".accounting-table-container");
+        if (!tableContainer) return;
+        tableContainer.empty();
+
+        const startMonth = this.targetStartMonth || "2000-01";
+        const endMonth = this.targetEndMonth || "2099-12";
+        
+        if (startMonth > endMonth) {
+            tableContainer.createEl("div", { text: "Start month cannot be after end month." });
+            return;
+        }
+
+        // 1. Calculate actual expenses per account per month
+        const actualExpenses: Record<string, Record<string, number>> = {};
+        const allMonthsWithTransactions = new Set<string>();
+        const expenseAccounts = new Set<string>();
+
+        // We only care about base transactions, unaffected by date filters (to calculate averages correctly)
+        this.ledger['transactions'].forEach(t => {
+            const month = t.date.substring(0, 7);
+            allMonthsWithTransactions.add(month);
+
+            t.postings.forEach(p => {
+                if (p.account.startsWith("Expenses:")) {
+                    expenseAccounts.add(p.account);
+                    if (!actualExpenses[p.account]) actualExpenses[p.account] = {};
+                    if (!actualExpenses[p.account][month]) actualExpenses[p.account][month] = 0;
+                    
+                    // Expense accounts usually increase when debited (positive amount)
+                    actualExpenses[p.account][month] += p.amount;
+                }
+            });
+        });
+
+        const sortedLedgerMonths = Array.from(allMonthsWithTransactions).sort();
+
+        // 2. Generate list of months in the selected range
+        const rangeMonths: string[] = [];
+        let curr = new Date(`${startMonth}-01T00:00:00Z`);
+        const end = new Date(`${endMonth}-01T00:00:00Z`);
+        while (curr <= end) {
+            rangeMonths.push(`${curr.getUTCFullYear()}-${String(curr.getUTCMonth() + 1).padStart(2, '0')}`);
+            curr.setUTCMonth(curr.getUTCMonth() + 1);
+        }
+
+        // 3. Render per account
+        const sortedAccounts = Array.from(expenseAccounts).sort();
+        
+        const contentDiv = tableContainer.createEl("div");
+        contentDiv.style.display = "flex";
+        contentDiv.style.flexDirection = "column";
+        contentDiv.style.gap = "20px";
+        contentDiv.style.paddingTop = "10px";
+
+        const currency = this.plugin.settings.currencySymbol;
+
+        for (const account of sortedAccounts) {
+            let aggregatedTarget = 0;
+            let aggregatedActual = 0;
+
+            for (const m of rangeMonths) {
+                // Actual
+                aggregatedActual += (actualExpenses[account]?.[m] || 0);
+
+                // Target
+                let target = 0;
+                let targetsObj = this.plugin.settings.expenseTargets?.[account] || {};
+                
+                if (targetsObj[m] !== undefined) {
+                    target = targetsObj[m];
+                } else {
+                    // Find most recent prior target
+                    const priorMonthsWithTargets = Object.keys(targetsObj).filter(k => k < m).sort();
+                    if (priorMonthsWithTargets.length > 0) {
+                        target = targetsObj[priorMonthsWithTargets[priorMonthsWithTargets.length - 1]];
+                    } else {
+                        // Average of previous months
+                        const priorMonths = sortedLedgerMonths.filter(k => k < m);
+                        let sum = 0;
+                        let count = 0;
+                        for (const pm of priorMonths) {
+                            if (actualExpenses[account]?.[pm] !== undefined) {
+                                sum += actualExpenses[account][pm];
+                                count++;
+                            }
+                        }
+                        if (count > 0) {
+                            target = sum / count;
+                        }
+                    }
+                }
+                aggregatedTarget += target;
+            }
+
+            // Draw bullet chart for this account
+            const accDiv = contentDiv.createEl("div");
+            accDiv.style.padding = "10px";
+            accDiv.style.border = "1px solid var(--background-modifier-border)";
+            accDiv.style.borderRadius = "8px";
+            accDiv.style.backgroundColor = "var(--background-secondary)";
+
+            const headerRow = accDiv.createEl("div");
+            headerRow.style.display = "flex";
+            headerRow.style.justifyContent = "space-between";
+            headerRow.style.alignItems = "center";
+            headerRow.style.marginBottom = "10px";
+            headerRow.style.flexWrap = "wrap";
+            headerRow.style.gap = "10px";
+
+            const title = headerRow.createEl("h4", { text: account });
+            title.style.margin = "0";
+
+            // Controls to set target
+            const controlGroup = headerRow.createEl("div");
+            controlGroup.style.display = "flex";
+            controlGroup.style.gap = "10px";
+            controlGroup.style.alignItems = "center";
+
+            const monthInput = controlGroup.createEl("input", { type: "month" });
+            monthInput.value = this.targetEndMonth; // default to end month
+
+            const targetInput = controlGroup.createEl("input", { type: "number", placeholder: "Amount" });
+            targetInput.style.width = "80px";
+
+            const saveBtn = controlGroup.createEl("button", { text: "Set Target" });
+            saveBtn.onclick = async () => {
+                const monthVal = monthInput.value;
+                const amtVal = parseFloat(targetInput.value);
+                if (!monthVal || isNaN(amtVal)) {
+                    new Notice("Please provide a valid month and amount.");
+                    return;
+                }
+
+                if (!this.plugin.settings.expenseTargets) this.plugin.settings.expenseTargets = {};
+                if (!this.plugin.settings.expenseTargets[account]) this.plugin.settings.expenseTargets[account] = {};
+                
+                this.plugin.settings.expenseTargets[account][monthVal] = amtVal;
+                await this.plugin.saveSettings();
+                new Notice(`Target set for ${account} in ${monthVal}`);
+                this.renderExpenseTargetView(container);
+            };
+
+            // Values row
+            const valuesRow = accDiv.createEl("div");
+            valuesRow.style.display = "flex";
+            valuesRow.style.justifyContent = "space-between";
+            valuesRow.style.fontSize = "0.9em";
+            valuesRow.style.marginBottom = "5px";
+
+            let displayActual = this.plugin.settings.hideBalances ? "***" : aggregatedActual.toFixed(2);
+            let displayTarget = this.plugin.settings.hideBalances ? "***" : aggregatedTarget.toFixed(2);
+            let displayRemaining = this.plugin.settings.hideBalances ? "***" : Math.max(0, aggregatedTarget - aggregatedActual).toFixed(2);
+            let displayExceeded = this.plugin.settings.hideBalances ? "***" : Math.max(0, aggregatedActual - aggregatedTarget).toFixed(2);
+
+            valuesRow.createEl("span", { text: `Spent: ${displayActual} ${currency}` });
+            valuesRow.createEl("span", { text: `Target: ${displayTarget} ${currency}` });
+
+            // Bullet chart visualization
+            const barContainer = accDiv.createEl("div");
+            barContainer.style.width = "100%";
+            barContainer.style.height = "24px";
+            barContainer.style.backgroundColor = "var(--background-primary)";
+            barContainer.style.borderRadius = "4px";
+            barContainer.style.position = "relative";
+            barContainer.style.overflow = "hidden";
+
+            // Determine scales
+            const maxVal = Math.max(aggregatedTarget, aggregatedActual, 1); // Avoid div by 0
+            
+            const targetPct = (aggregatedTarget / maxVal) * 100;
+            const actualPct = (aggregatedActual / maxVal) * 100;
+
+            // Spent Bar (Green/Blue up to target)
+            const spentBar = barContainer.createEl("div");
+            spentBar.style.height = "100%";
+            spentBar.style.position = "absolute";
+            spentBar.style.left = "0";
+            spentBar.style.top = "0";
+            spentBar.style.width = `${Math.min(actualPct, targetPct)}%`;
+            spentBar.style.backgroundColor = "var(--color-blue)";
+            spentBar.style.opacity = "0.8";
+
+            // Exceeded Bar (Red beyond target)
+            if (aggregatedActual > aggregatedTarget) {
+                const exceededBar = barContainer.createEl("div");
+                exceededBar.style.height = "100%";
+                exceededBar.style.position = "absolute";
+                exceededBar.style.left = `${targetPct}%`;
+                exceededBar.style.top = "0";
+                exceededBar.style.width = `${actualPct - targetPct}%`;
+                exceededBar.style.backgroundColor = "var(--color-red)";
+                exceededBar.style.opacity = "0.8";
+                
+                const exceedLabel = valuesRow.createEl("span", { text: `Exceeded: ${displayExceeded} ${currency}` });
+                exceedLabel.style.color = "var(--color-red)";
+                exceedLabel.style.fontWeight = "bold";
+            } else {
+                const remLabel = valuesRow.createEl("span", { text: `Remaining: ${displayRemaining} ${currency}` });
+                remLabel.style.color = "var(--text-muted)";
+            }
+
+            // Target Line
+            const targetLine = barContainer.createEl("div");
+            targetLine.style.height = "100%";
+            targetLine.style.position = "absolute";
+            targetLine.style.left = `${targetPct}%`;
+            targetLine.style.top = "0";
+            targetLine.style.width = "2px";
+            targetLine.style.backgroundColor = "var(--text-normal)";
+            targetLine.style.zIndex = "2";
         }
     }
 
