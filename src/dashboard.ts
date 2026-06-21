@@ -551,11 +551,24 @@ export class AccountingDashboardView extends ItemView {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    title: { display: true, text: 'Income vs Expense' }
+                    title: { display: true, text: 'Income vs Expense' },
+                    tooltip: {
+                        callbacks: {
+                            label: (context: any) => {
+                                if (this.plugin.settings.hideBalances) {
+                                    return `${context.dataset.label}: ***`;
+                                }
+                                return `${context.dataset.label}: ${(context.raw as number).toFixed(2)} ${currency}`;
+                            }
+                        }
+                    }
                 },
                 scales: {
                     x: { stacked: false },
-                    y: { stacked: false }
+                    y: { 
+                        stacked: false,
+                        ticks: { display: !this.plugin.settings.hideBalances }
+                    }
                 }
             }
         });
