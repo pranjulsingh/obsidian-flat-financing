@@ -536,3 +536,51 @@ export class EditTransactionModal extends Modal {
         contentEl.empty();
     }
 }
+
+export class DeleteTransactionModal extends Modal {
+    plugin: ObsidianAccountingPlugin;
+    transaction: Transaction;
+
+    constructor(app: App, plugin: ObsidianAccountingPlugin, transaction: Transaction) {
+        super(app);
+        this.plugin = plugin;
+        this.transaction = transaction;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.createEl("h2", { text: "Delete transaction?" });
+        contentEl.createEl("p", { text: `Are you sure you want to delete the transaction from ${this.transaction.date} for "${this.transaction.description}"?` });
+
+        new Setting(contentEl)
+            .addButton(btn => btn
+                .setButtonText("Cancel")
+                .onClick(() => this.close()))
+            .addButton(btn => btn
+                .setButtonText("Delete")
+                .setWarning()
+                .onClick(async () => {
+                    if (this.transaction.lineStart === undefined || this.transaction.lineEnd === undefined) {
+                        new Notice("Error: Cannot find transaction location in file.");
+                        this.close();
+                        return;
+                    }
+
+                    const success = await this.plugin.fileUtils.deleteTransactionBlock(
+                        this.plugin.settings.beancountFilePath,
+                        this.transaction.lineStart,
+                        this.transaction.lineEnd
+                    );
+
+                    if (success) {
+                        new Notice("Transaction deleted!");
+                    }
+                    this.close();
+                }));
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}

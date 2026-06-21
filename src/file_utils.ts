@@ -81,6 +81,25 @@ export class FileUtils {
         }
     }
 
+    async deleteTransactionBlock(path: string, startLine: number, endLine: number): Promise<boolean> {
+        if (!await this.ensureFileExists(path)) return false;
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (!(file instanceof TFile)) return false;
+
+        try {
+            const currentContent = await this.app.vault.read(file);
+            const lines = currentContent.split('\n');
+            // Remove the lines corresponding to the transaction block
+            lines.splice(startLine, endLine - startLine + 1);
+            await this.app.vault.modify(file, lines.join("\n"));
+            return true;
+        } catch (e) {
+            console.error("Error deleting transaction block", e);
+            new Notice("Error deleting transaction. Check console.");
+            return false;
+        }
+    }
+
     async getBeanCountFile(path: string): Promise<TFile | null> {
         if (!await this.ensureFileExists(path)) return null;
 

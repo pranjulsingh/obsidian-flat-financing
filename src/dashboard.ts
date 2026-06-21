@@ -2,7 +2,7 @@ import { ItemView, WorkspaceLeaf, Setting, ButtonComponent, Notice } from "obsid
 import ObsidianAccountingPlugin from "./main";
 import { Ledger } from "./ledger";
 import { AccountSuggest } from "./suggester";
-import { EditTransactionModal } from "./modals";
+import { EditTransactionModal, DeleteTransactionModal } from "./modals";
 import Chart from 'chart.js/auto';
 
 export const DASHBOARD_VIEW_TYPE = "obsidian-accounting-dashboard";
@@ -808,10 +808,10 @@ export class AccountingDashboardView extends ItemView {
         // Header
         const thead = table.createEl("thead");
         const headerRow = thead.createEl("tr");
-        const headers = ["Date", "Tag", "Description", "Source account", "Target account", "Amount", "Edit"];
+        const headers = ["Date", "Tag", "Description", "Source account", "Target account", "Amount", "Actions"];
         headers.forEach(h => {
             const th = headerRow.createEl("th");
-            if (h !== "Edit") {
+            if (h !== "Actions") {
                 th.setText(this.transactionSortColumn === h ? `${h} ${this.transactionSortOrder === 'asc' ? '↑' : '↓'}` : h);
                 th.style.cursor = "pointer";
                 th.onclick = () => {
@@ -873,6 +873,13 @@ export class AccountingDashboardView extends ItemView {
                 .setIcon("pencil")
                 .onClick(() => {
                     const modal = new EditTransactionModal(this.app, this.plugin, t);
+                    modal.open();
+                });
+
+            new ButtonComponent(editCell)
+                .setIcon("trash")
+                .onClick(() => {
+                    const modal = new DeleteTransactionModal(this.app, this.plugin, t);
                     modal.open();
                 });
 
