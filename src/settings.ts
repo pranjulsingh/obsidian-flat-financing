@@ -1,18 +1,30 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import ObsidianAccountingPlugin from "./main";
 
+export interface SavingsGoal {
+    id: string;
+    text: string;
+    startDate: string; // YYYY-MM
+    endDate: string; // YYYY-MM
+    linkedAccount: string;
+    totalAmount: number;
+    status?: 'Active' | 'Successful' | 'Cancelled';
+}
+
 export interface AccountingPluginSettings {
     beancountFilePath: string;
     currencySymbol: string;
     hideBalances: boolean;
     expenseTargets: Record<string, Record<string, number>>; // Account -> YYYY-MM -> Target
+    savingsGoals: SavingsGoal[];
 }
 
 export const DEFAULT_SETTINGS: AccountingPluginSettings = {
     beancountFilePath: "accounting.beancount",
     currencySymbol: "USD",
     hideBalances: false,
-    expenseTargets: {}
+    expenseTargets: {},
+    savingsGoals: []
 }
 
 export class AccountingSettingTab extends PluginSettingTab {

@@ -2,6 +2,7 @@ import { App, Modal, Setting, Notice } from "obsidian";
 import ObsidianAccountingPlugin from "./main";
 import { AccountSuggest } from "./suggester";
 import { Transaction } from "./ledger";
+import { SavingsGoal } from "./settings";
 
 function setupKeyboardPadding(modal: Modal) {
     const onFocus = (e: Event) => {
@@ -582,5 +583,195 @@ export class DeleteTransactionModal extends Modal {
     onClose() {
         const { contentEl } = this;
         contentEl.empty();
+    }
+}
+
+export class GoalModal extends Modal {
+    plugin: ObsidianAccountingPlugin;
+    goal: Partial<SavingsGoal>;
+    isEdit: boolean;
+    allAccounts: string[] = [];
+
+    constructor(app: App, plugin: ObsidianAccountingPlugin, existingGoal?: SavingsGoal) {
+        super(app);
+        this.plugin = plugin;
+        this.isEdit = !!existingGoal;
+        this.goal = existingGoal ? { ...existingGoal } : {
+            id: crypto.randomUUID(),
+            text: "",
+            startDate: new Date().toISOString().substring(0, 7),
+            endDate: new Date().toISOString().substring(0, 7),
+            linkedAccount: "",
+            totalAmount: 0
+        };
+    }
+
+    async onOpen() {
+        setupKeyboardPadding(this);
+        const { contentEl } = this;
+        
+        this.allAccounts = await this.plugin.fileUtils.getAccounts(this.plugin.settings.beancountFilePath);
+        const assetAccounts = this.allAccounts.filter(a => a.startsWith("Assets:"));
+
+        contentEl.createEl("h2", { text: this.isEdit ? "Edit savings goal" : "Create savings goal" });
+        contentEl.addClass("accounting-modal-content");
+
+        new Setting(contentEl)
+            .setName("Goal text")
+            .addText(text => text
+                .setValue(this.goal.text || "")
+                .onChange(val => this.goal.text = val));
+
+        new Setting(contentEl)
+            .setName("Start month")
+            .addText(text => {
+                text.inputEl.type = "month";
+                text.setValue(this.goal.startDate || "")
+                    .onChange(val => this.goal.startDate = val);
+            });
+
+        new Setting(contentEl)
+            .setName("End month")
+            .addText(text => {
+                text.inputEl.type = "month";
+                text.setValue(this.goal.endDate || "")
+                    .onChange(val => this.goal.endDate = val);
+            });
+
+        new Setting(contentEl)
+            .setName("Linked account")
+            .addText(text => {
+                text.setValue(this.goal.linkedAccount || "")
+                    .onChange(val => this.goal.linkedAccount = val);
+                new AccountSuggest(this.app, text.inputEl, assetAccounts);
+            });
+
+        new Setting(contentEl)
+            .setName("Total amount")
+            .addText(text => {
+                text.inputEl.type = "number";
+                text.setValue(this.goal.totalAmount ? this.goal.totalAmount.toString() : "")
+                    .onChange(val => this.goal.totalAmount = parseFloat(val));
+            });
+
+        new Setting(contentEl)
+            .addButton(btn => btn
+                .setButtonText(this.isEdit ? "Save changes" : "Create goal")
+                .setCta()
+                .onClick(async () => {
+                    if (!this.goal.text || !this.goal.startDate || !this.goal.endDate || !this.goal.linkedAccount || !this.goal.totalAmount) {
+                        new Notice("Please fill out all fields.");
+                        return;
+                    }
+                    if (this.goal.startDate > this.goal.endDate) {
+                        new Notice("Start month cannot be after end month.");
+                        return;
+                    }
+
+                    if (!this.plugin.settings.savingsGoals) {
+                        this.plugin.settings.savingsGoals = [];
+                    }
+
+                    if (this.isEdit) {
+                        const idx = this.plugin.settings.savingsGoals.findIndex(g => g.id === this.goal.id);
+                        if (idx !== -1) {
+                            this.plugin.settings.savingsGoals[idx] = this.goal as SavingsGoal;
+                        }
+                    } else {
+                        this.plugin.settings.savingsGoals.push(this.goal as SavingsGoal);
+                    }
+
+                    await this.plugin.saveSettings();
+                    new Notice("Goal saved!");
+                    this.close();
+                }));
+    }
+
+    onClose() {
+        this.contentEl.empty();
+    }
+}
+
+export class DeleteGoalModal extends Modal {
+    plugin: ObsidianAccountingPlugin;
+    goal: SavingsGoal;
+
+    constructor(app: App, plugin: ObsidianAccountingPlugin, goal: SavingsGoal) {
+        super(app);
+        this.plugin = plugin;
+        this.goal = goal;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.createEl("h2", { text: "Delete goal?" });
+        contentEl.createEl("p", { text: `Are you sure you want to delete the goal "${this.goal.text}"?` });
+
+        new Setting(contentEl)
+            .addButton(btn => btn
+                .setButtonText("Cancel")
+                .onClick(() => this.close()))
+            .addButton(btn => btn
+                .setButtonText("Delete")
+                .setWarning()
+                .onClick(async () => {
+                    this.plugin.settings.savingsGoals = this.plugin.settings.savingsGoals.filter(g => g.id !== this.goal.id);
+                    await this.plugin.saveSettings();
+                    new Notice("Goal deleted!");
+                    this.close();
+                }));
+    }
+
+    onClose() {
+        this.contentEl.empty();
+    }
+}
+
+export class CloseGoalModal extends Modal {
+    plugin: ObsidianAccountingPlugin;
+    goal: SavingsGoal;
+    closeType: 'Successful' | 'Cancelled' = 'Successful';
+
+    constructor(app: App, plugin: ObsidianAccountingPlugin, goal: SavingsGoal) {
+        super(app);
+        this.plugin = plugin;
+        this.goal = goal;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.createEl("h2", { text: "Close goal?" });
+        contentEl.createEl("p", { text: `Are you sure you want to close the goal "${this.goal.text}"? This will release reserved funds.` });
+
+        new Setting(contentEl)
+            .setName("Close type")
+            .addDropdown(drop => drop
+                .addOption('Successful', 'Successful')
+                .addOption('Cancelled', 'Cancelled')
+                .setValue(this.closeType)
+                .onChange((val: 'Successful' | 'Cancelled') => {
+                    this.closeType = val;
+                }));
+
+        new Setting(contentEl)
+            .addButton(btn => btn
+                .setButtonText("Cancel")
+                .onClick(() => this.close()))
+            .addButton(btn => btn
+                .setButtonText("Close goal")
+                .setCta()
+                .onClick(async () => {
+                    const idx = this.plugin.settings.savingsGoals.findIndex(g => g.id === this.goal.id);
+                    if (idx !== -1) {
+                        this.plugin.settings.savingsGoals[idx].status = this.closeType;
+                        await this.plugin.saveSettings();
+                        new Notice(`Goal marked as ${this.closeType}!`);
+                    }
+                    this.close();
+                }));
+    }
+
+    onClose() {
+        this.contentEl.empty();
     }
 }

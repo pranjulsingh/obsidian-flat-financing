@@ -2,8 +2,9 @@ import { ItemView, WorkspaceLeaf, Setting, ButtonComponent, Notice } from "obsid
 import ObsidianAccountingPlugin from "./main";
 import { Ledger } from "./ledger";
 import { AccountSuggest } from "./suggester";
-import { EditTransactionModal, DeleteTransactionModal } from "./modals";
+import { EditTransactionModal, DeleteTransactionModal, GoalModal, DeleteGoalModal, CloseGoalModal } from "./modals";
 import Chart from 'chart.js/auto';
+import { SavingsGoal } from "./settings";
 
 export const DASHBOARD_VIEW_TYPE = "obsidian-accounting-dashboard";
 
@@ -46,7 +47,7 @@ export class AccountingDashboardView extends ItemView {
     };
 
     // Tabs
-    activeTab: 'summary' | 'transactions' | 'visualization' | 'import' | 'expenseTarget' = 'visualization';
+    activeTab: 'summary' | 'transactions' | 'visualization' | 'import' | 'expenseTarget' | 'savingsGoal' = 'visualization';
     chartInstances: Chart[] = [];
     showChartAmounts: boolean = false;
 
@@ -122,6 +123,15 @@ export class AccountingDashboardView extends ItemView {
             void this.refresh();
         };
 
+        const savingsGoalTab = tabContainer.createEl("div", { text: "Savings Goal" });
+        savingsGoalTab.addClass("accounting-tab-button");
+        if (this.activeTab === 'savingsGoal') savingsGoalTab.addClass("active");
+
+        savingsGoalTab.onclick = () => {
+            this.activeTab = 'savingsGoal';
+            void this.refresh();
+        };
+
         const summaryTab = tabContainer.createEl("div", { text: "Summary" });
         summaryTab.addClass("accounting-tab-button");
         if (this.activeTab === 'summary') summaryTab.addClass("active");
@@ -153,7 +163,7 @@ export class AccountingDashboardView extends ItemView {
         const controls = container.createEl("div");
         controls.addClass("accounting-dashboard-controls");
 
-        if (this.activeTab !== 'import') {
+        if (this.activeTab !== 'import' && this.activeTab !== 'savingsGoal') {
             // Date Row (Shared)
         const dateRow = controls.createEl("div");
         dateRow.addClass("accounting-row");
@@ -372,9 +382,300 @@ export class AccountingDashboardView extends ItemView {
             this.renderVisualizationView(container);
         } else if (this.activeTab === 'expenseTarget') {
             this.renderExpenseTargetView(container);
+        } else if (this.activeTab === 'savingsGoal') {
+            this.renderSavingsGoalView(container);
         } else if (this.activeTab === 'import') {
             this.renderImportView(container);
         }
+    }
+
+    renderSavingsGoalView(container: HTMLElement) {
+        let tableContainer = container.querySelector(".accounting-table-container");
+        if (!tableContainer) return;
+        tableContainer.empty();
+
+        const contentDiv = tableContainer.createEl("div");
+        contentDiv.style.display = "flex";
+        contentDiv.style.flexDirection = "column";
+        contentDiv.style.gap = "30px";
+        contentDiv.style.paddingTop = "10px";
+
+        // Header actions
+        const headerRow = contentDiv.createEl("div");
+        headerRow.style.display = "flex";
+        headerRow.style.justifyContent = "space-between";
+        headerRow.style.alignItems = "center";
+        
+        const title = headerRow.createEl("h3", { text: "Savings Goals" });
+        title.style.margin = "0";
+        
+        new ButtonComponent(headerRow)
+            .setButtonText("Create new goal")
+            .setCta()
+            .onClick(() => {
+                const modal = new GoalModal(this.app, this.plugin);
+                const originalOnClose = modal.onClose.bind(modal);
+                modal.onClose = () => {
+                    originalOnClose();
+                    this.renderSavingsGoalView(container);
+                };
+                modal.open();
+            });
+
+        const goals = this.plugin.settings.savingsGoals || [];
+        
+        const parseMonthStr = (mStr: string) => {
+            const parts = mStr.split("-");
+            return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+        };
+        const getMonthsInclusive = (startStr: string, endStr: string) => {
+            const s = parseMonthStr(startStr);
+            const e = parseMonthStr(endStr);
+            return (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth()) + 1;
+        };
+
+        const nowMonthStr = new Date().toISOString().substring(0, 7);
+
+        const goalsWithProgress = goals.map(g => {
+            const totalMonths = Math.max(1, getMonthsInclusive(g.startDate, g.endDate));
+            let monthsPassed = 0;
+            if (nowMonthStr < g.startDate) {
+                monthsPassed = 0;
+            } else if (nowMonthStr > g.endDate) {
+                monthsPassed = totalMonths;
+            } else {
+                monthsPassed = getMonthsInclusive(g.startDate, nowMonthStr);
+            }
+            const monthlyNeeded = g.totalAmount / totalMonths;
+            let reservedTillNow = monthlyNeeded * monthsPassed;
+            
+            if (g.status === 'Successful' || g.status === 'Cancelled') {
+                reservedTillNow = 0;
+            }
+
+            const amountPending = g.totalAmount - reservedTillNow;
+            const timeToComplete = totalMonths - monthsPassed; 
+            return { ...g, totalMonths, monthlyNeeded, reservedTillNow, amountPending, timeToComplete };
+        });
+
+        // 1. Table
+        const table = contentDiv.createEl("table");
+        table.addClass("accounting-table");
+        const thead = table.createEl("thead");
+        const headerTr = thead.createEl("tr");
+        const headers = ["Goal", "Timeline", "Status", "Account", "Target", "Monthly", "Reserved", "Pending", "Remaining", "Actions"];
+        headers.forEach(h => headerTr.createEl("th", { text: h }));
+
+        const tbody = table.createEl("tbody");
+        if (goalsWithProgress.length === 0) {
+            const emptyTr = tbody.createEl("tr");
+            const emptyTd = emptyTr.createEl("td", { text: "No savings goals created." });
+            emptyTd.colSpan = headers.length;
+            emptyTd.style.textAlign = "center";
+        }
+
+        goalsWithProgress.forEach(g => {
+            const tr = tbody.createEl("tr");
+            tr.createEl("td", { text: g.text });
+            tr.createEl("td", { text: `${g.startDate} to ${g.endDate}` });
+            tr.createEl("td", { text: g.status || "Active" });
+            tr.createEl("td", { text: g.linkedAccount });
+            tr.createEl("td", { text: this.formatMoney(g.totalAmount) });
+            tr.createEl("td", { text: this.formatMoney(g.monthlyNeeded) });
+            tr.createEl("td", { text: this.formatMoney(g.reservedTillNow) });
+            tr.createEl("td", { text: this.formatMoney(g.amountPending) });
+            tr.createEl("td", { text: `${g.timeToComplete} mos` });
+            
+            const actionsTd = tr.createEl("td");
+            actionsTd.style.display = "flex";
+            actionsTd.style.gap = "10px";
+            
+            const editBtn = new ButtonComponent(actionsTd)
+                .setIcon("pencil")
+                .setTooltip("Edit goal")
+                .onClick(() => {
+                    const modal = new GoalModal(this.app, this.plugin, g);
+                    const originalOnClose = modal.onClose.bind(modal);
+                    modal.onClose = () => {
+                        originalOnClose();
+                        this.renderSavingsGoalView(container);
+                    };
+                    modal.open();
+                });
+                
+            const delBtn = new ButtonComponent(actionsTd)
+                .setIcon("trash")
+                .setTooltip("Delete goal")
+                .onClick(() => {
+                    const modal = new DeleteGoalModal(this.app, this.plugin, g);
+                    const originalOnClose = modal.onClose.bind(modal);
+                    modal.onClose = () => {
+                        originalOnClose();
+                        this.renderSavingsGoalView(container);
+                    };
+                    modal.open();
+                });
+
+            if (g.status !== 'Successful' && g.status !== 'Cancelled') {
+                const closeBtn = new ButtonComponent(actionsTd)
+                    .setIcon("check-circle")
+                    .setTooltip("Close goal")
+                    .onClick(() => {
+                        const modal = new CloseGoalModal(this.app, this.plugin, g);
+                        const originalOnClose = modal.onClose.bind(modal);
+                        modal.onClose = () => {
+                            originalOnClose();
+                            this.renderSavingsGoalView(container);
+                        };
+                        modal.open();
+                    });
+            }
+        });
+
+        // 2. Asset Accounts Visualizations
+        contentDiv.createEl("h3", { text: "Asset Allocations" });
+        
+        const balances = this.ledger.getBalances("2000-01-01", "2099-12-31");
+        const assetBalances: Record<string, number> = {};
+        for (const b of balances) {
+            if (b.account.startsWith("Assets:")) {
+                assetBalances[b.account] = b.currentBalance;
+            }
+        }
+        
+        goalsWithProgress.forEach(g => {
+            if (g.linkedAccount && g.linkedAccount.startsWith("Assets:") && assetBalances[g.linkedAccount] === undefined) {
+                assetBalances[g.linkedAccount] = 0;
+            }
+        });
+
+        const assetContainer = contentDiv.createEl("div");
+        assetContainer.style.display = "flex";
+        assetContainer.style.flexDirection = "column";
+        assetContainer.style.gap = "20px";
+
+        for (const [account, currentBalance] of Object.entries(assetBalances)) {
+            const accountGoals = goalsWithProgress.filter(g => g.linkedAccount === account && g.status !== 'Successful' && g.status !== 'Cancelled');
+            
+            if (currentBalance === 0 && accountGoals.length === 0) continue;
+
+            const totalReserved = accountGoals.reduce((sum, g) => sum + g.reservedTillNow, 0);
+            const freeBalance = currentBalance - totalReserved;
+
+            const accDiv = assetContainer.createEl("div");
+            accDiv.style.padding = "15px";
+            accDiv.style.border = "1px solid var(--background-modifier-border)";
+            accDiv.style.borderRadius = "8px";
+            accDiv.style.backgroundColor = "var(--background-secondary)";
+
+            const titleRow = accDiv.createEl("div");
+            titleRow.style.display = "flex";
+            titleRow.style.justifyContent = "space-between";
+            titleRow.style.marginBottom = "10px";
+            titleRow.createEl("h4", { text: account }).style.margin = "0";
+            
+            const balSpan = titleRow.createEl("span", { text: `Balance: ${this.formatMoney(currentBalance)}` });
+            balSpan.style.fontWeight = "bold";
+
+            const barContainer = accDiv.createEl("div");
+            barContainer.style.width = "100%";
+            barContainer.style.height = "24px";
+            barContainer.style.backgroundColor = "var(--background-primary)";
+            barContainer.style.borderRadius = "4px";
+            barContainer.style.position = "relative";
+            barContainer.style.overflow = "hidden";
+            barContainer.style.display = "flex";
+
+            const maxVal = Math.max(currentBalance, totalReserved, 1);
+            
+            const colors = [
+                "var(--color-blue)",
+                "var(--color-purple)",
+                "var(--color-orange)",
+                "var(--color-yellow)",
+                "var(--color-cyan)"
+            ];
+
+            accountGoals.forEach((g, idx) => {
+                const pct = (g.reservedTillNow / maxVal) * 100;
+                if (pct > 0) {
+                    const seg = barContainer.createEl("div");
+                    seg.style.height = "100%";
+                    seg.style.width = `${pct}%`;
+                    seg.style.backgroundColor = colors[idx % colors.length];
+                    seg.title = `${g.text}: ${this.formatMoney(g.reservedTillNow)}`;
+                }
+            });
+
+            if (freeBalance > 0) {
+                const pct = (freeBalance / maxVal) * 100;
+                const seg = barContainer.createEl("div");
+                seg.style.height = "100%";
+                seg.style.width = `${pct}%`;
+                seg.style.backgroundColor = "var(--color-green)";
+                seg.title = `Free Balance: ${this.formatMoney(freeBalance)}`;
+            } else if (freeBalance < 0) {
+                barContainer.style.border = "2px solid var(--color-red)";
+            }
+
+            const legendRow = accDiv.createEl("div");
+            legendRow.style.marginTop = "10px";
+            legendRow.style.display = "flex";
+            legendRow.style.flexWrap = "wrap";
+            legendRow.style.gap = "15px";
+            legendRow.style.fontSize = "0.9em";
+
+            accountGoals.forEach((g, idx) => {
+                const lg = legendRow.createEl("div");
+                lg.style.display = "flex";
+                lg.style.alignItems = "center";
+                lg.style.gap = "5px";
+                
+                const dot = lg.createEl("div");
+                dot.style.width = "12px";
+                dot.style.height = "12px";
+                dot.style.borderRadius = "50%";
+                dot.style.backgroundColor = colors[idx % colors.length];
+                
+                lg.createEl("span", { text: `${g.text}: ${this.formatMoney(g.reservedTillNow)}` });
+            });
+
+            const freeLg = legendRow.createEl("div");
+            freeLg.style.display = "flex";
+            freeLg.style.alignItems = "center";
+            freeLg.style.gap = "5px";
+            
+            const freeDot = freeLg.createEl("div");
+            freeDot.style.width = "12px";
+            freeDot.style.height = "12px";
+            freeDot.style.borderRadius = "50%";
+            freeDot.style.backgroundColor = freeBalance >= 0 ? "var(--color-green)" : "var(--color-red)";
+            
+            const freeText = freeLg.createEl("span", { text: `Free Balance: ${this.formatMoney(freeBalance)}` });
+            if (freeBalance < 0) {
+                freeText.style.color = "var(--color-red)";
+                freeText.style.fontWeight = "bold";
+            }
+        }
+
+        // Global Totals
+        const globalTotalBalance = Object.values(assetBalances).reduce((sum, bal) => sum + bal, 0);
+        const globalTotalReserved = goalsWithProgress.reduce((sum, g) => sum + g.reservedTillNow, 0);
+        const globalTotalFree = globalTotalBalance - globalTotalReserved;
+
+        const totalsDiv = contentDiv.createEl("div");
+        totalsDiv.style.marginTop = "20px";
+        totalsDiv.style.padding = "15px";
+        totalsDiv.style.borderTop = "2px solid var(--background-modifier-border)";
+        totalsDiv.style.display = "flex";
+        totalsDiv.style.justifyContent = "space-between";
+        totalsDiv.style.fontWeight = "bold";
+
+        totalsDiv.createEl("span", { text: `Total Asset Balance: ${this.formatMoney(globalTotalBalance)}` });
+        totalsDiv.createEl("span", { text: `Total Reserved: ${this.formatMoney(globalTotalReserved)}` });
+        
+        const freeTotalSpan = totalsDiv.createEl("span", { text: `Total Free Balance: ${this.formatMoney(globalTotalFree)}` });
+        if (globalTotalFree < 0) freeTotalSpan.style.color = "var(--color-red)";
     }
 
     renderExpenseTargetView(container: HTMLElement) {
