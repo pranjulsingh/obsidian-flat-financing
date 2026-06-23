@@ -86,9 +86,9 @@
 
 .accounting-table-container {
     overflow-y: auto;
-    max-height: calc(100% - 350px);
+    max-height: calc(100% - 150px);
     margin-top: 10px;
-    padding-bottom: 50px;
+    padding-bottom: 15px;
 }
 
 .accounting-table {
@@ -180,7 +180,7 @@
     flex-wrap: wrap;
     gap: 20px;
     flex-direction: column;
-    padding-bottom: 50px;
+    padding-bottom: 15px;
 }
 
 .accounting-chart-box {
@@ -231,7 +231,7 @@
     /* Setup native horizontal swiping for wide mobile data tables */
     .accounting-table-container {
         /* Maintain scroll height bounds but allow sweeping */
-        max-height: calc(100vh - 250px);
+        max-height: calc(100vh - 180px);
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         margin-top: 5px;

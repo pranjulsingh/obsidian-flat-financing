@@ -2,15 +2,35 @@
 
 A simple [Beancount](https://beancount.github.io/docs/) integration for Obsidian, allowing you to manage your personal finances, track expenses, and view interactive dashboards directly within your vault.
 
-![Demo](resources/FlatFinancing.gif)
+![Add Account](resources/ff-add-account.png)
+
+![Add Transactions](resources/ff-add-transactions.png)
+
+![Account Distribution Dashboard](resources/ff-dash-account-distribution.png)
+
+![Networth Dashboard](resources/ff-dash-net-worth.png)
+
+![Account Summary Dashboard](resources/ff-dash-account-summary.png)
+
+![Transactions Dashboard](resources/ff-dash-transactions.png)
+
+![Expense Target Dashboard](resources/ff-dash-expense-target.png)
+
+![Savings Goal Dashboard](resources/ff-dash-savings-goal.png)
+
+![Savings Goal Dashboard](resources/ff-dash-savings-goal.png)
+
+![Import Data Dashboard](resources/ff-dash-import-data.png)
 
 ## Features
 
 - **Interactive Dashboard**:
     - **Visualization View**: Top-level graphical timeline. Automatically calculates precise Date-wise Net Worth flow tracks, Income vs. Expense velocity overlays, and active Doughnut Account distributions.
+    - **Expense Target View**: Set monthly target limits for expense accounts and monitor your actual spending progress against them dynamically using bullet charts.
+    - **Savings Goal View**: Track dedicated savings allocations across your asset accounts, complete with visual progress bars mapping free vs reserved balances!
     - **Summary View**: View account balances filtered by Date, Type (Assets, Income, etc.), and specific Accounts.
     - **Transactions View**: List transaction details with powerful filtering.
-    - **Tabs**: Easily switch between Visualization, Summary and Transaction lists!
+    - **Tabs**: Easily switch between Visualization, Expense Target, Savings Goal, Summary and Transaction lists!
     - **Multi-column Sorting**: Every table header is intuitively clickable. Easily swap between ascending/descending modes across financial metrics and descriptions.
     - **Privacy Mode**: Seamlessly obscure raw global balances and timeline bounds using the strict 'Hide Balances' toggle while leaving temporal differential tools and transactional logs fully mapped.
 - **Data Export**:
@@ -23,6 +43,7 @@ A simple [Beancount](https://beancount.github.io/docs/) integration for Obsidian
     - **Add Account**: Create new accounts with opening balances. The engine intelligently prepends new declarations right below your global configuration header instead of crashing at the file-base!
     - **Add Transaction**: Quick entry modal with auto-completion for account names. Supports robust field verification constraints locking zero-value or invalid assignments natively.
     - **Edit Transactions**: Hover over any dashboard record and pop open a direct live modification terminal visually. Changes seamlessly merge straight back into the exact `.beancount` block coordinates perfectly untouched via block splicing!
+    - **Delete Transactions**: Click the trash icon to easily remove records directly from the Transactions view!
     - **Auto-Creation**: Automatically initializes new accounts found in transaction entries.
 - **Full Mobile Responsive Optimization**:
     - The underlying environment maps complex dynamic variables against Android and iOS footprints! Form controls smartly wrap into broad columns. Native Horizontal view-swiping natively unlocks robust data tables without crushing mobile columns.
