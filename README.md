@@ -25,7 +25,7 @@ A simple [Beancount](https://beancount.github.io/docs/) integration for Obsidian
 ## Features
 
 - **Interactive Dashboard**:
-    - **Visualization View**: Top-level graphical timeline. Automatically calculates precise Date-wise Net Worth flow tracks, Income vs. Expense velocity overlays, and active Doughnut Account distributions.
+    - **Visualization View**: Top-level graphical timeline. Automatically calculates precise Date-wise Net Worth flow tracks, Cumulative Expenses tracking, Income vs. Expense velocity overlays, Periodic Savings KPI, and active Doughnut Account distributions.
     - **Expense Target View**: Set monthly target limits for expense accounts and monitor your actual spending progress against them dynamically using bullet charts.
     - **Savings Goal View**: Track dedicated savings allocations across your asset accounts, complete with visual progress bars mapping free vs reserved balances!
     - **Summary View**: View account balances filtered by Date, Type (Assets, Income, etc.), and specific Accounts.
@@ -36,9 +36,12 @@ A simple [Beancount](https://beancount.github.io/docs/) integration for Obsidian
 - **Data Export**:
     - **Export CSV / PDF**: Leverage out-of-the-box download capabilities translating your table configurations instantly into universal formats directly connected to native Obsidian capabilities.
 - **Advanced Filtering**:
+    - **Wildcard Support**: Seamlessly filter categories by appending `*` (e.g., `Expenses:Food:*` captures all sub-categories instantly).
     - Multi-select filters for **Source Accounts** (Credits) and **Target Accounts** (Debits).
     - Filter by **Tags** (e.g., `#vacation`).
     - Standard Date Range filters.
+- **Modern, Classy UI**:
+    - The dashboard has been comprehensively revamped to feature glassmorphism, depth, segmented control tabs, smooth micro-animations, and a responsive layout that natively respects your active Obsidian theme.
 - **Easy Data Entry & Maintenance**:
     - **Add Account**: Create new accounts with opening balances. The engine intelligently prepends new declarations right below your global configuration header instead of crashing at the file-base!
     - **Add Transaction**: Quick entry modal with auto-completion for account names. Supports robust field verification constraints locking zero-value or invalid assignments natively.
