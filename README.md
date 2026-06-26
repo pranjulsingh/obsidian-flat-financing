@@ -1,6 +1,8 @@
 # Obsidian Flat Financing Plugin
 
-A simple [Beancount](https://beancount.github.io/docs/) integration for Obsidian, allowing you to manage your personal finances, track expenses, and view interactive dashboards directly within your vault.
+Flat Financing turns your Obsidian vault into a powerful, interactive personal finance manager using plain-text Beancount files. 
+
+If you want to track your Net Worth, monitor expenses, and set savings goals without your financial data ever leaving your local vault, this plugin is for you.
 
 ![Add Account](resources/ff-add-account.png)
 
@@ -24,36 +26,15 @@ A simple [Beancount](https://beancount.github.io/docs/) integration for Obsidian
 
 ## Features
 
-- **Interactive Dashboard**:
-    - **Visualization View**: Top-level graphical timeline. Automatically calculates precise Date-wise Net Worth flow tracks, Cumulative Expenses tracking, Income vs. Expense velocity overlays, Periodic Savings KPI, and active Doughnut Account distributions.
-    - **Expense Target View**: Set monthly target limits for expense accounts and monitor your actual spending progress against them dynamically using bullet charts.
-    - **Savings Goal View**: Track dedicated savings allocations across your asset accounts, complete with visual progress bars mapping free vs reserved balances!
-    - **Summary View**: View account balances filtered by Date, Type (Assets, Income, etc.), and specific Accounts.
-    - **Transactions View**: List transaction details with powerful filtering.
-    - **Tabs**: Easily switch between Visualization, Expense Target, Savings Goal, Summary and Transaction lists!
-    - **Multi-column Sorting**: Every table header is intuitively clickable. Easily swap between ascending/descending modes across financial metrics and descriptions.
-    - **Privacy Mode**: Seamlessly obscure raw global balances and timeline bounds using the strict 'Hide Balances' toggle while leaving temporal differential tools and transactional logs fully mapped.
-- **Data Export**:
-    - **Export CSV / PDF**: Leverage out-of-the-box download capabilities translating your table configurations instantly into universal formats directly connected to native Obsidian capabilities.
-- **Advanced Filtering**:
-    - **Wildcard Support**: Seamlessly filter categories by appending `*` (e.g., `Expenses:Food:*` captures all sub-categories instantly).
-    - Multi-select filters for **Source Accounts** (Credits) and **Target Accounts** (Debits).
-    - Filter by **Tags** (e.g., `#vacation`).
-    - Standard Date Range filters.
-- **Modern, Classy UI**:
-    - The dashboard has been comprehensively revamped to feature glassmorphism, depth, segmented control tabs, smooth micro-animations, and a responsive layout that natively respects your active Obsidian theme.
-- **Easy Data Entry & Maintenance**:
-    - **Add Account**: Create new accounts with opening balances. The engine intelligently prepends new declarations right below your global configuration header instead of crashing at the file-base!
-    - **Add Transaction**: Quick entry modal with auto-completion for account names. Supports robust field verification constraints locking zero-value or invalid assignments natively.
-    - **Edit Transactions**: Hover over any dashboard record and pop open a direct live modification terminal visually. Changes seamlessly merge straight back into the exact `.beancount` block coordinates perfectly untouched via block splicing!
-    - **Delete Transactions**: Click the trash icon to easily remove records directly from the Transactions view!
-    - **Auto-Creation**: Automatically initializes new accounts found in transaction entries.
-- **Full Mobile Responsive Optimization**:
-    - The underlying environment maps complex dynamic variables against Android and iOS footprints! Form controls smartly wrap into broad columns. Native Horizontal view-swiping natively unlocks robust data tables without crushing mobile columns.
-    - Custom JS APIs automatically track your live keyboard size on standard inputs, visually sweeping your entire framework straight out of the virtual keyboard overlay seamlessly.
-- **Seamless Integration**:
-    - Works with your existing `.beancount` text files.
-    - Updates in real-time.
+- 📊 **Interactive Dashboards**: Beautiful, native UI featuring Date-wise Net Worth flows, Cumulative Expenses tracking, Income vs. Expense overlays, and dynamic Account distributions.
+- 🎯 **Goals & Limits**: Set monthly expense targets (with bullet charts) and track visual progress bars for your dedicated savings accounts.
+- ⚡ **Frictionless Data Entry**: Quickly add, edit, or delete accounts and transactions directly through intuitive modals—no manual syntax typing required. Includes auto-completion and robust constraints.
+- 🔍 **Advanced Filtering**: Instantly drill down into your data using wildcard account searches (e.g., `Expenses:Food:*`), specific Tags (`#vacation`), and custom date ranges.
+- 📱 **Fully Mobile Optimized**: The UI and data tables are natively built to look and swipe perfectly on the Obsidian mobile app, smartly wrapping controls.
+- 🕶️ **Privacy Mode**: One click toggles exact balances to `***` so you can comfortably share your screen or take screenshots.
+- 🎨 **Modern, Classy UI**: Comprehensively revamped to feature glassmorphism, depth, segmented control tabs, smooth micro-animations, and a layout that natively respects your active Obsidian theme.
+- 📥 **Data Export**: Leverage out-of-the-box download capabilities translating your table configurations instantly into CSV or Markdown PDFs.
+- 🔌 **Seamless Integration**: Works entirely locally with your existing `.beancount` text files and updates in real-time.
 
 ## Installation
 
