@@ -4,6 +4,8 @@ import { Ledger } from "./ledger";
 import { AccountSuggest } from "./suggester";
 import { EditTransactionModal, DeleteTransactionModal, GoalModal, DeleteGoalModal, CloseGoalModal } from "./modals";
 import Chart from 'chart.js/auto';
+import { SankeyController, Flow } from 'chartjs-chart-sankey';
+Chart.register(SankeyController, Flow);
 import { SavingsGoal } from "./settings";
 
 export const DASHBOARD_VIEW_TYPE = "obsidian-accounting-dashboard";
@@ -81,6 +83,13 @@ export class AccountingDashboardView extends ItemView {
             return `*** ${this.plugin.settings.currencySymbol}`;
         }
         return `${amount.toFixed(2)} ${this.plugin.settings.currencySymbol}`;
+    }
+
+    matchesWildcard(text: string, pattern: string): boolean {
+        const escapeRegex = (s: string) => s.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+        // Replace wildcard * with regex .* and ? with .
+        const regexStr = "^" + pattern.split("*").map(escapeRegex).join(".*").replace(/\\\?/g, ".") + "$";
+        return new RegExp(regexStr).test(text);
     }
 
     async onOpen() {
@@ -915,8 +924,8 @@ export class AccountingDashboardView extends ItemView {
                 const filterTag = this.tagFilter.startsWith("#") ? this.tagFilter.substring(1) : this.tagFilter;
                 if (!t.tags.some(tag => tag.toLowerCase().includes(filterTag.toLowerCase()))) return false;
             }
-            if (this.selectedSourceAccounts.size > 0 && !t.postings.some(p => p.amount < 0 && this.selectedSourceAccounts.has(p.account))) return false;
-            if (this.selectedTargetAccounts.size > 0 && !t.postings.some(p => p.amount > 0 && this.selectedTargetAccounts.has(p.account))) return false;
+            if (this.selectedSourceAccounts.size > 0 && !t.postings.some(p => p.amount < 0 && Array.from(this.selectedSourceAccounts).some(pattern => this.matchesWildcard(p.account, pattern)))) return false;
+            if (this.selectedTargetAccounts.size > 0 && !t.postings.some(p => p.amount > 0 && Array.from(this.selectedTargetAccounts).some(pattern => this.matchesWildcard(p.account, pattern)))) return false;
             return true;
         });
 
@@ -939,6 +948,7 @@ export class AccountingDashboardView extends ItemView {
         const netWorth = assets + liabilities; 
         const totalEarnings = Math.abs(income);
         const monthlyExpense = Math.abs(expenses);
+        const periodicSavings = totalEarnings - monthlyExpense;
 
         const kpiContainer = tableContainer.createEl("div");
         kpiContainer.addClass("accounting-kpi-container");
@@ -946,6 +956,7 @@ export class AccountingDashboardView extends ItemView {
         this.createKpiCard(kpiContainer, "Net Worth", this.formatMoney(netWorth));
         this.createKpiCard(kpiContainer, "Total Earnings", `${totalEarnings.toFixed(2)} ${currency}`);
         this.createKpiCard(kpiContainer, "Periodic Expenses", `${monthlyExpense.toFixed(2)} ${currency}`);
+        this.createKpiCard(kpiContainer, "Periodic Savings", `${periodicSavings.toFixed(2)} ${currency}`);
 
         // --- Chart Generation ---
         const chartsContainer = tableContainer.createEl("div");
@@ -978,7 +989,13 @@ export class AccountingDashboardView extends ItemView {
         typeChartBox.addClass("accounting-chart-box");
         const typeCanvas = typeChartBox.createEl("canvas");
         
-        const dataVals = balances.map(b => Math.abs(b.currentBalance));
+        const dataVals = balances.map(b => {
+            if (b.type === 'Assets' || b.type === 'Liabilities') {
+                return Math.abs(b.endBalance);
+            } else {
+                return Math.abs(b.difference);
+            }
+        });
         const totalVal = dataVals.reduce((a, b) => a + b, 0);
         const labels = balances.map((b, i) => {
             if (!this.showChartAmounts) return b.account;
@@ -1026,17 +1043,30 @@ export class AccountingDashboardView extends ItemView {
         // Filters isolated from "Type" rule for line graphs
         let baseBalancesIgnoredType = this.ledger.getBalances(this.startDate, this.endDate, this.plugin.settings);
         let strictlyAccountFiltered = baseBalancesIgnoredType.filter(bal => {
-            if (this.selectedAccounts.size > 0 && !this.selectedAccounts.has(bal.account)) return false;
+            if (this.selectedAccounts.size > 0 && !Array.from(this.selectedAccounts).some(pattern => this.matchesWildcard(bal.account, pattern))) return false;
             return true;
         });
 
         // 2. Transaction Density Flow Timeline & Net Worth Tracking
-        const dateMap: { [date: string]: { income: number, expense: number, netWorthImpact: number } } = {};
+        const dateMap: { [date: string]: { income: number, expense: number, netWorthImpact: number, assetImpacts?: { [acc: string]: number } } } = {};
         
+        // Pre-calculate starting balances for Asset accounts
+        const assetAccounts = balances.filter(b => b.type === 'Assets').map(b => b.account);
+        const assetBalancesOverTime: { [account: string]: number[] } = {};
+        const currentAssetBalances: { [account: string]: number } = {};
+        
+        assetAccounts.forEach(acc => {
+            assetBalancesOverTime[acc] = [];
+            const balInfo = balances.find(b => b.account === acc);
+            currentAssetBalances[acc] = balInfo ? balInfo.startBalance : 0;
+        });
+
+        const sankeyDataMap: { [key: string]: { from: string, to: string, flow: number } } = {};
+
         // Setup dates inside bounds
         transactions.forEach(t => {
             const date = t.date;
-            if (!dateMap[date]) dateMap[date] = { income: 0, expense: 0, netWorthImpact: 0 };
+            if (!dateMap[date]) dateMap[date] = { income: 0, expense: 0, netWorthImpact: 0, assetImpacts: {} };
             
             // Derive fundamental transaction sets honoring global filters precisely
             const isAccountSelected = (acc: string) => balances.some(b => b.account === acc);
@@ -1057,6 +1087,35 @@ export class AccountingDashboardView extends ItemView {
             dateMap[date].income += Math.abs(incomeImpact);
             dateMap[date].expense += expenseImpact;
             dateMap[date].netWorthImpact += nwImpact;
+
+            // Asset impacts for stacked area chart
+            if (!dateMap[date].assetImpacts) dateMap[date].assetImpacts = {};
+            t.postings.forEach(p => {
+                if (assetAccounts.includes(p.account)) {
+                    if (!dateMap[date].assetImpacts![p.account]) dateMap[date].assetImpacts![p.account] = 0;
+                    dateMap[date].assetImpacts![p.account] += p.amount;
+                }
+            });
+
+            // Sankey Flow calculation
+            const sources = t.postings.filter(p => p.amount < 0);
+            const targets = t.postings.filter(p => p.amount > 0);
+            const totalSourceAmt = Math.abs(sources.reduce((sum, p) => sum + p.amount, 0));
+            const totalTargetAmt = targets.reduce((sum, p) => sum + p.amount, 0);
+            
+            if (totalSourceAmt > 0 && totalTargetAmt > 0) {
+                sources.forEach(source => {
+                    const sourceRatio = Math.abs(source.amount) / totalSourceAmt;
+                    targets.forEach(target => {
+                        const flowAmount = target.amount * sourceRatio;
+                        const key = `${source.account}|${target.account}`;
+                        if (!sankeyDataMap[key]) {
+                            sankeyDataMap[key] = { from: source.account, to: target.account, flow: 0 };
+                        }
+                        sankeyDataMap[key].flow += flowAmount;
+                    });
+                });
+            }
         });
 
         const sortedDates = Object.keys(dateMap).sort();
@@ -1065,15 +1124,26 @@ export class AccountingDashboardView extends ItemView {
         const incData: number[] = [];
         const expData: number[] = [];
         const nwData: number[] = [];
+        const cumExpData: number[] = [];
 
         // Base Starting net worth resolved strictly prior to timeline mapping (to allow accurate charting)
         let trackingNetWorth = balances.filter(b => b.type === 'Assets' || b.type === 'Liabilities').reduce((acc, b) => acc + b.startBalance, 0);
+        let trackingExpense = 0;
 
         sortedDates.forEach(d => {
             incData.push(dateMap[d].income);
             expData.push(dateMap[d].expense);
             trackingNetWorth += dateMap[d].netWorthImpact;
             nwData.push(trackingNetWorth);
+            
+            trackingExpense += dateMap[d].expense;
+            cumExpData.push(trackingExpense);
+            
+            assetAccounts.forEach(acc => {
+                const impact = (dateMap[d].assetImpacts && dateMap[d].assetImpacts[acc]) ? dateMap[d].assetImpacts[acc] : 0;
+                currentAssetBalances[acc] += impact;
+                assetBalancesOverTime[acc].push(currentAssetBalances[acc]);
+            });
         });
 
         // 2: Smooth Line Chart (Income vs Expense)
@@ -1174,6 +1244,158 @@ export class AccountingDashboardView extends ItemView {
             }
         });
         this.chartInstances.push(nwChart);
+
+        // 4: Cumulative Expenses Line Chart
+        const cumExpChartBox = chartsContainer.createEl("div");
+        cumExpChartBox.addClass("accounting-chart-box");
+        const cumExpCanvas = cumExpChartBox.createEl("canvas");
+
+        const cumExpChart = new Chart(cumExpCanvas, {
+            type: 'line',
+            data: {
+                labels: sortedDates,
+                datasets: [
+                    { 
+                        label: 'Cumulative Expenses', 
+                        data: cumExpData, 
+                        borderColor: '#ef4444', 
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        fill: true,
+                        tension: 0.4 
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Cumulative Expenses' },
+                    tooltip: {
+                        callbacks: {
+                            label: (context: any) => {
+                                if (this.plugin.settings.hideBalances) return `${context.dataset.label}: ***`;
+                                return `${context.dataset.label}: ${(context.raw as number).toFixed(2)} ${currency}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { display: !this.plugin.settings.hideBalances } },
+                    y: { ticks: { display: !this.plugin.settings.hideBalances } }
+                }
+            }
+        });
+        this.chartInstances.push(cumExpChart);
+
+        // 5: Stacked Area Chart for Asset Composition
+        const assetChartBox = chartsContainer.createEl("div");
+        assetChartBox.addClass("accounting-chart-box");
+        const assetCanvas = assetChartBox.createEl("canvas");
+
+        const assetDatasets = assetAccounts.map((acc, i) => {
+            return {
+                label: acc,
+                data: assetBalancesOverTime[acc],
+                borderColor: `hsl(${(i * 360 / Math.max(assetAccounts.length, 1)) % 360}, 70%, 50%)`,
+                backgroundColor: `hsla(${(i * 360 / Math.max(assetAccounts.length, 1)) % 360}, 70%, 50%, 0.5)`,
+                fill: true,
+                tension: 0.4
+            };
+        });
+
+        const assetChart = new Chart(assetCanvas, {
+            type: 'line',
+            data: {
+                labels: sortedDates,
+                datasets: assetDatasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Asset Composition' },
+                    tooltip: {
+                        mode: 'index',
+                        callbacks: {
+                            label: (context: any) => {
+                                if (this.plugin.settings.hideBalances) return `${context.dataset.label}: ***`;
+                                return `${context.dataset.label}: ${(context.raw as number).toFixed(2)} ${currency}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { display: !this.plugin.settings.hideBalances } },
+                    y: { 
+                        stacked: true,
+                        ticks: { display: !this.plugin.settings.hideBalances }
+                    }
+                }
+            }
+        });
+        this.chartInstances.push(assetChart);
+
+        // 6: Sankey Diagram for Cash Flow
+        const sankeyChartBox = chartsContainer.createEl("div");
+        sankeyChartBox.addClass("accounting-chart-box");
+        // Sankey often needs more vertical space
+        sankeyChartBox.style.minHeight = "400px";
+        const sankeyCanvas = sankeyChartBox.createEl("canvas");
+
+        // Filter out tiny flows to keep Sankey readable (optional, but good practice). 
+        // Here we'll show all as requested but if there's >100 edges it might be slow.
+        const sankeyDataArray = Object.values(sankeyDataMap).map(f => ({ from: f.from, to: f.to, flow: f.flow }));
+        
+        // Define colors for nodes based on their type
+        const getColorForAccount = (acc: string) => {
+            if (acc.startsWith("Income")) return "#60a5fa"; // blue
+            if (acc.startsWith("Expenses")) return "#facc15"; // yellow
+            if (acc.startsWith("Assets")) return "#4ade80"; // green
+            if (acc.startsWith("Liabilities")) return "#ef4444"; // red
+            return "#9ca3af"; // gray
+        };
+
+        const sankeyColors: { [key: string]: string } = {};
+        sankeyDataArray.forEach(f => {
+            sankeyColors[f.from] = getColorForAccount(f.from);
+            sankeyColors[f.to] = getColorForAccount(f.to);
+        });
+
+        if (sankeyDataArray.length > 0) {
+            const sankeyChart = new Chart(sankeyCanvas, {
+                type: 'sankey',
+                data: {
+                    datasets: [{
+                        label: 'Cash Flow',
+                        data: sankeyDataArray,
+                        colorFrom: (c: any) => getColorForAccount(c.dataset.data[c.dataIndex].from),
+                        colorTo: (c: any) => getColorForAccount(c.dataset.data[c.dataIndex].to),
+                        colorMode: 'gradient', // or 'from' or 'to'
+                        /* @ts-ignore */
+                        size: 'max',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Cash Flow Map (Sankey)' },
+                        tooltip: {
+                            callbacks: {
+                                label: (context: any) => {
+                                    const d = context.raw;
+                                    if (this.plugin.settings.hideBalances) return `${d.from} → ${d.to}: ***`;
+                                    return `${d.from} → ${d.to}: ${d.flow.toFixed(2)} ${currency}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            this.chartInstances.push(sankeyChart);
+        } else {
+            sankeyChartBox.createEl("div", { text: "No cash flow data available for selected period." }).style.padding = "20px";
+        }
     }
 
     createKpiCard(container: HTMLElement, title: string, value: string) {
@@ -1223,7 +1445,7 @@ export class AccountingDashboardView extends ItemView {
                 return false;
             }
             // Account Filter
-            if (this.selectedAccounts.size > 0 && !this.selectedAccounts.has(bal.account)) {
+            if (this.selectedAccounts.size > 0 && !Array.from(this.selectedAccounts).some(pattern => this.matchesWildcard(bal.account, pattern))) {
                 return false;
             }
             return true;
@@ -1328,14 +1550,14 @@ export class AccountingDashboardView extends ItemView {
             // Source Accounts Filter (Money leaving account, i.e. Credit/Negative)
             if (this.selectedSourceAccounts.size > 0) {
                 // Keep transaction if ANY negative posting matches one of the selected source accounts
-                const hasSource = t.postings.some(p => p.amount < 0 && this.selectedSourceAccounts.has(p.account));
+                const hasSource = t.postings.some(p => p.amount < 0 && Array.from(this.selectedSourceAccounts).some(pattern => this.matchesWildcard(p.account, pattern)));
                 if (!hasSource) return false;
             }
 
             // Target Accounts Filter (Money entering account, i.e. Debit/Positive)
             if (this.selectedTargetAccounts.size > 0) {
                 // Keep transaction if ANY positive posting matches one of the selected target accounts
-                const hasTarget = t.postings.some(p => p.amount > 0 && this.selectedTargetAccounts.has(p.account));
+                const hasTarget = t.postings.some(p => p.amount > 0 && Array.from(this.selectedTargetAccounts).some(pattern => this.matchesWildcard(p.account, pattern)));
                 if (!hasTarget) return false;
             }
 
@@ -1522,7 +1744,7 @@ export class AccountingDashboardView extends ItemView {
         let balances = this.ledger.getBalances(this.startDate, this.endDate, this.plugin.settings);
         balances = balances.filter(bal => {
             if (this.selectedTypes.size > 0 && !this.selectedTypes.has(bal.type)) return false;
-            if (this.selectedAccounts.size > 0 && !this.selectedAccounts.has(bal.account)) return false;
+            if (this.selectedAccounts.size > 0 && !Array.from(this.selectedAccounts).some(pattern => this.matchesWildcard(bal.account, pattern))) return false;
             return true;
         });
 
@@ -1555,8 +1777,8 @@ export class AccountingDashboardView extends ItemView {
                 const filterTag = this.tagFilter.startsWith("#") ? this.tagFilter.substring(1) : this.tagFilter;
                 if (!t.tags.some(tag => tag.toLowerCase().includes(filterTag.toLowerCase()))) return false;
             }
-            if (this.selectedSourceAccounts.size > 0 && !t.postings.some(p => p.amount < 0 && this.selectedSourceAccounts.has(p.account))) return false;
-            if (this.selectedTargetAccounts.size > 0 && !t.postings.some(p => p.amount > 0 && this.selectedTargetAccounts.has(p.account))) return false;
+            if (this.selectedSourceAccounts.size > 0 && !t.postings.some(p => p.amount < 0 && Array.from(this.selectedSourceAccounts).some(pattern => this.matchesWildcard(p.account, pattern)))) return false;
+            if (this.selectedTargetAccounts.size > 0 && !t.postings.some(p => p.amount > 0 && Array.from(this.selectedTargetAccounts).some(pattern => this.matchesWildcard(p.account, pattern)))) return false;
             return true;
         });
 

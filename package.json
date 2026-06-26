@@ -23,6 +23,7 @@
     },
     "dependencies": {
         "chart.js": "^4.5.1",
+        "chartjs-chart-sankey": "^0.14.3",
         "chartjs-plugin-datalabels": "^2.2.0"
     }
 }
