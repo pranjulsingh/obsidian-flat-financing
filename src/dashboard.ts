@@ -6,7 +6,6 @@ import { EditTransactionModal, DeleteTransactionModal, GoalModal, DeleteGoalModa
 import Chart from 'chart.js/auto';
 import { SankeyController, Flow } from 'chartjs-chart-sankey';
 Chart.register(SankeyController, Flow);
-import { SavingsGoal } from "./settings";
 
 export const DASHBOARD_VIEW_TYPE = "obsidian-accounting-dashboard";
 
