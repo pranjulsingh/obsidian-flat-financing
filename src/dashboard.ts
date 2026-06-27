@@ -404,19 +404,19 @@ export class AccountingDashboardView extends ItemView {
         tableContainer.empty();
 
         const contentDiv = tableContainer.createEl("div");
-        contentDiv.style.display = "flex";
-        contentDiv.style.flexDirection = "column";
-        contentDiv.style.gap = "30px";
-        contentDiv.style.paddingTop = "10px";
+        contentDiv.setCssStyles({ "display": "flex" });
+        contentDiv.setCssStyles({ "flexDirection": "column" });
+        contentDiv.setCssStyles({ "gap": "30px" });
+        contentDiv.setCssStyles({ "paddingTop": "10px" });
 
         // Header actions
         const headerRow = contentDiv.createEl("div");
-        headerRow.style.display = "flex";
-        headerRow.style.justifyContent = "space-between";
-        headerRow.style.alignItems = "center";
+        headerRow.setCssStyles({ "display": "flex" });
+        headerRow.setCssStyles({ "justifyContent": "space-between" });
+        headerRow.setCssStyles({ "alignItems": "center" });
         
         const title = headerRow.createEl("h3", { text: "Savings Goals" });
-        title.style.margin = "0";
+        title.setCssStyles({ "margin": "0" });
         
         new ButtonComponent(headerRow)
             .setButtonText("Create new goal")
@@ -480,7 +480,7 @@ export class AccountingDashboardView extends ItemView {
             const emptyTr = tbody.createEl("tr");
             const emptyTd = emptyTr.createEl("td", { text: "No savings goals created." });
             emptyTd.colSpan = headers.length;
-            emptyTd.style.textAlign = "center";
+            emptyTd.setCssStyles({ "textAlign": "center" });
         }
 
         goalsWithProgress.forEach(g => {
@@ -496,8 +496,8 @@ export class AccountingDashboardView extends ItemView {
             tr.createEl("td", { text: `${g.timeToComplete} mos` });
             
             const actionsTd = tr.createEl("td");
-            actionsTd.style.display = "flex";
-            actionsTd.style.gap = "10px";
+            actionsTd.setCssStyles({ "display": "flex" });
+            actionsTd.setCssStyles({ "gap": "10px" });
             
             const editBtn = new ButtonComponent(actionsTd)
                 .setIcon("pencil")
@@ -559,9 +559,9 @@ export class AccountingDashboardView extends ItemView {
         });
 
         const assetContainer = contentDiv.createEl("div");
-        assetContainer.style.display = "flex";
-        assetContainer.style.flexDirection = "column";
-        assetContainer.style.gap = "20px";
+        assetContainer.setCssStyles({ "display": "flex" });
+        assetContainer.setCssStyles({ "flexDirection": "column" });
+        assetContainer.setCssStyles({ "gap": "20px" });
 
         for (const [account, currentBalance] of Object.entries(assetBalances)) {
             const accountGoals = goalsWithProgress.filter(g => g.linkedAccount === account && g.status !== 'Successful' && g.status !== 'Cancelled');
@@ -572,28 +572,28 @@ export class AccountingDashboardView extends ItemView {
             const freeBalance = currentBalance - totalReserved;
 
             const accDiv = assetContainer.createEl("div");
-            accDiv.style.padding = "15px";
-            accDiv.style.border = "1px solid var(--background-modifier-border)";
-            accDiv.style.borderRadius = "8px";
-            accDiv.style.backgroundColor = "var(--background-secondary)";
+            accDiv.setCssStyles({ "padding": "15px" });
+            accDiv.setCssStyles({ "border": "1px solid var(--background-modifier-border)" });
+            accDiv.setCssStyles({ "borderRadius": "8px" });
+            accDiv.setCssStyles({ "backgroundColor": "var(--background-secondary)" });
 
             const titleRow = accDiv.createEl("div");
-            titleRow.style.display = "flex";
-            titleRow.style.justifyContent = "space-between";
-            titleRow.style.marginBottom = "10px";
-            titleRow.createEl("h4", { text: account }).style.margin = "0";
+            titleRow.setCssStyles({ "display": "flex" });
+            titleRow.setCssStyles({ "justifyContent": "space-between" });
+            titleRow.setCssStyles({ "marginBottom": "10px" });
+            titleRow.createEl("h4", { text: account }).setCssStyles({ "margin": "0" });
             
             const balSpan = titleRow.createEl("span", { text: `Balance: ${this.formatMoney(currentBalance)}` });
-            balSpan.style.fontWeight = "bold";
+            balSpan.setCssStyles({ "fontWeight": "bold" });
 
             const barContainer = accDiv.createEl("div");
-            barContainer.style.width = "100%";
-            barContainer.style.height = "24px";
-            barContainer.style.backgroundColor = "var(--background-primary)";
-            barContainer.style.borderRadius = "4px";
-            barContainer.style.position = "relative";
-            barContainer.style.overflow = "hidden";
-            barContainer.style.display = "flex";
+            barContainer.setCssStyles({ "width": "100%" });
+            barContainer.setCssStyles({ "height": "24px" });
+            barContainer.setCssStyles({ "backgroundColor": "var(--background-primary)" });
+            barContainer.setCssStyles({ "borderRadius": "4px" });
+            barContainer.setCssStyles({ "position": "relative" });
+            barContainer.setCssStyles({ "overflow": "hidden" });
+            barContainer.setCssStyles({ "display": "flex" });
 
             const maxVal = Math.max(currentBalance, totalReserved, 1);
             
@@ -609,9 +609,9 @@ export class AccountingDashboardView extends ItemView {
                 const pct = (g.reservedTillNow / maxVal) * 100;
                 if (pct > 0) {
                     const seg = barContainer.createEl("div");
-                    seg.style.height = "100%";
-                    seg.style.width = `${pct}%`;
-                    seg.style.backgroundColor = colors[idx % colors.length];
+                    seg.setCssStyles({ "height": "100%" });
+                    seg.setCssStyles({ "width": `${pct}%` });
+                    seg.setCssStyles({ "backgroundColor": colors[idx % colors.length] });
                     seg.title = `${g.text}: ${this.formatMoney(g.reservedTillNow)}`;
                 }
             });
@@ -619,51 +619,51 @@ export class AccountingDashboardView extends ItemView {
             if (freeBalance > 0) {
                 const pct = (freeBalance / maxVal) * 100;
                 const seg = barContainer.createEl("div");
-                seg.style.height = "100%";
-                seg.style.width = `${pct}%`;
-                seg.style.backgroundColor = "var(--color-green)";
+                seg.setCssStyles({ "height": "100%" });
+                seg.setCssStyles({ "width": `${pct}%` });
+                seg.setCssStyles({ "backgroundColor": "var(--color-green)" });
                 seg.title = `Free Balance: ${this.formatMoney(freeBalance)}`;
             } else if (freeBalance < 0) {
-                barContainer.style.border = "2px solid var(--color-red)";
+                barContainer.setCssStyles({ "border": "2px solid var(--color-red)" });
             }
 
             const legendRow = accDiv.createEl("div");
-            legendRow.style.marginTop = "10px";
-            legendRow.style.display = "flex";
-            legendRow.style.flexWrap = "wrap";
-            legendRow.style.gap = "15px";
-            legendRow.style.fontSize = "0.9em";
+            legendRow.setCssStyles({ "marginTop": "10px" });
+            legendRow.setCssStyles({ "display": "flex" });
+            legendRow.setCssStyles({ "flexWrap": "wrap" });
+            legendRow.setCssStyles({ "gap": "15px" });
+            legendRow.setCssStyles({ "fontSize": "0.9em" });
 
             accountGoals.forEach((g, idx) => {
                 const lg = legendRow.createEl("div");
-                lg.style.display = "flex";
-                lg.style.alignItems = "center";
-                lg.style.gap = "5px";
+                lg.setCssStyles({ "display": "flex" });
+                lg.setCssStyles({ "alignItems": "center" });
+                lg.setCssStyles({ "gap": "5px" });
                 
                 const dot = lg.createEl("div");
-                dot.style.width = "12px";
-                dot.style.height = "12px";
-                dot.style.borderRadius = "50%";
-                dot.style.backgroundColor = colors[idx % colors.length];
+                dot.setCssStyles({ "width": "12px" });
+                dot.setCssStyles({ "height": "12px" });
+                dot.setCssStyles({ "borderRadius": "50%" });
+                dot.setCssStyles({ "backgroundColor": colors[idx % colors.length] });
                 
                 lg.createEl("span", { text: `${g.text}: ${this.formatMoney(g.reservedTillNow)}` });
             });
 
             const freeLg = legendRow.createEl("div");
-            freeLg.style.display = "flex";
-            freeLg.style.alignItems = "center";
-            freeLg.style.gap = "5px";
+            freeLg.setCssStyles({ "display": "flex" });
+            freeLg.setCssStyles({ "alignItems": "center" });
+            freeLg.setCssStyles({ "gap": "5px" });
             
             const freeDot = freeLg.createEl("div");
-            freeDot.style.width = "12px";
-            freeDot.style.height = "12px";
-            freeDot.style.borderRadius = "50%";
-            freeDot.style.backgroundColor = freeBalance >= 0 ? "var(--color-green)" : "var(--color-red)";
+            freeDot.setCssStyles({ "width": "12px" });
+            freeDot.setCssStyles({ "height": "12px" });
+            freeDot.setCssStyles({ "borderRadius": "50%" });
+            freeDot.setCssStyles({ "backgroundColor": freeBalance >= 0 ? "var(--color-green)" : "var(--color-red)" });
             
             const freeText = freeLg.createEl("span", { text: `Free Balance: ${this.formatMoney(freeBalance)}` });
             if (freeBalance < 0) {
-                freeText.style.color = "var(--color-red)";
-                freeText.style.fontWeight = "bold";
+                freeText.setCssStyles({ "color": "var(--color-red)" });
+                freeText.setCssStyles({ "fontWeight": "bold" });
             }
         }
 
@@ -673,18 +673,18 @@ export class AccountingDashboardView extends ItemView {
         const globalTotalFree = globalTotalBalance - globalTotalReserved;
 
         const totalsDiv = contentDiv.createEl("div");
-        totalsDiv.style.marginTop = "20px";
-        totalsDiv.style.padding = "15px";
-        totalsDiv.style.borderTop = "2px solid var(--background-modifier-border)";
-        totalsDiv.style.display = "flex";
-        totalsDiv.style.justifyContent = "space-between";
-        totalsDiv.style.fontWeight = "bold";
+        totalsDiv.setCssStyles({ "marginTop": "20px" });
+        totalsDiv.setCssStyles({ "padding": "15px" });
+        totalsDiv.setCssStyles({ "borderTop": "2px solid var(--background-modifier-border)" });
+        totalsDiv.setCssStyles({ "display": "flex" });
+        totalsDiv.setCssStyles({ "justifyContent": "space-between" });
+        totalsDiv.setCssStyles({ "fontWeight": "bold" });
 
         totalsDiv.createEl("span", { text: `Total Asset Balance: ${this.formatMoney(globalTotalBalance)}` });
         totalsDiv.createEl("span", { text: `Total Reserved: ${this.formatMoney(globalTotalReserved)}` });
         
         const freeTotalSpan = totalsDiv.createEl("span", { text: `Total Free Balance: ${this.formatMoney(globalTotalFree)}` });
-        if (globalTotalFree < 0) freeTotalSpan.style.color = "var(--color-red)";
+        if (globalTotalFree < 0) freeTotalSpan.setCssStyles({ "color": "var(--color-red)" });
     }
 
     renderExpenseTargetView(container: HTMLElement) {
@@ -737,10 +737,10 @@ export class AccountingDashboardView extends ItemView {
         const sortedAccounts = Array.from(expenseAccounts).sort();
         
         const contentDiv = tableContainer.createEl("div");
-        contentDiv.style.display = "flex";
-        contentDiv.style.flexDirection = "column";
-        contentDiv.style.gap = "20px";
-        contentDiv.style.paddingTop = "10px";
+        contentDiv.setCssStyles({ "display": "flex" });
+        contentDiv.setCssStyles({ "flexDirection": "column" });
+        contentDiv.setCssStyles({ "gap": "20px" });
+        contentDiv.setCssStyles({ "paddingTop": "10px" });
 
         const currency = this.plugin.settings.currencySymbol;
 
@@ -784,33 +784,33 @@ export class AccountingDashboardView extends ItemView {
 
             // Draw bullet chart for this account
             const accDiv = contentDiv.createEl("div");
-            accDiv.style.padding = "10px";
-            accDiv.style.border = "1px solid var(--background-modifier-border)";
-            accDiv.style.borderRadius = "8px";
-            accDiv.style.backgroundColor = "var(--background-secondary)";
+            accDiv.setCssStyles({ "padding": "10px" });
+            accDiv.setCssStyles({ "border": "1px solid var(--background-modifier-border)" });
+            accDiv.setCssStyles({ "borderRadius": "8px" });
+            accDiv.setCssStyles({ "backgroundColor": "var(--background-secondary)" });
 
             const headerRow = accDiv.createEl("div");
-            headerRow.style.display = "flex";
-            headerRow.style.justifyContent = "space-between";
-            headerRow.style.alignItems = "center";
-            headerRow.style.marginBottom = "10px";
-            headerRow.style.flexWrap = "wrap";
-            headerRow.style.gap = "10px";
+            headerRow.setCssStyles({ "display": "flex" });
+            headerRow.setCssStyles({ "justifyContent": "space-between" });
+            headerRow.setCssStyles({ "alignItems": "center" });
+            headerRow.setCssStyles({ "marginBottom": "10px" });
+            headerRow.setCssStyles({ "flexWrap": "wrap" });
+            headerRow.setCssStyles({ "gap": "10px" });
 
             const title = headerRow.createEl("h4", { text: account });
-            title.style.margin = "0";
+            title.setCssStyles({ "margin": "0" });
 
             // Controls to set target
             const controlGroup = headerRow.createEl("div");
-            controlGroup.style.display = "flex";
-            controlGroup.style.gap = "10px";
-            controlGroup.style.alignItems = "center";
+            controlGroup.setCssStyles({ "display": "flex" });
+            controlGroup.setCssStyles({ "gap": "10px" });
+            controlGroup.setCssStyles({ "alignItems": "center" });
 
             const monthInput = controlGroup.createEl("input", { type: "month" });
             monthInput.value = this.targetEndMonth; // default to end month
 
             const targetInput = controlGroup.createEl("input", { type: "number", placeholder: "Amount" });
-            targetInput.style.width = "80px";
+            targetInput.setCssStyles({ "width": "80px" });
 
             const saveBtn = controlGroup.createEl("button", { text: "Set Target" });
             saveBtn.onclick = async () => {
@@ -832,10 +832,10 @@ export class AccountingDashboardView extends ItemView {
 
             // Values row
             const valuesRow = accDiv.createEl("div");
-            valuesRow.style.display = "flex";
-            valuesRow.style.justifyContent = "space-between";
-            valuesRow.style.fontSize = "0.9em";
-            valuesRow.style.marginBottom = "5px";
+            valuesRow.setCssStyles({ "display": "flex" });
+            valuesRow.setCssStyles({ "justifyContent": "space-between" });
+            valuesRow.setCssStyles({ "fontSize": "0.9em" });
+            valuesRow.setCssStyles({ "marginBottom": "5px" });
 
             let displayActual = this.plugin.settings.hideBalances ? "***" : aggregatedActual.toFixed(2);
             let displayTarget = this.plugin.settings.hideBalances ? "***" : aggregatedTarget.toFixed(2);
@@ -847,12 +847,12 @@ export class AccountingDashboardView extends ItemView {
 
             // Bullet chart visualization
             const barContainer = accDiv.createEl("div");
-            barContainer.style.width = "100%";
-            barContainer.style.height = "24px";
-            barContainer.style.backgroundColor = "var(--background-primary)";
-            barContainer.style.borderRadius = "4px";
-            barContainer.style.position = "relative";
-            barContainer.style.overflow = "hidden";
+            barContainer.setCssStyles({ "width": "100%" });
+            barContainer.setCssStyles({ "height": "24px" });
+            barContainer.setCssStyles({ "backgroundColor": "var(--background-primary)" });
+            barContainer.setCssStyles({ "borderRadius": "4px" });
+            barContainer.setCssStyles({ "position": "relative" });
+            barContainer.setCssStyles({ "overflow": "hidden" });
 
             // Determine scales
             const maxVal = Math.max(aggregatedTarget, aggregatedActual, 1); // Avoid div by 0
@@ -862,42 +862,42 @@ export class AccountingDashboardView extends ItemView {
 
             // Spent Bar (Green/Blue up to target)
             const spentBar = barContainer.createEl("div");
-            spentBar.style.height = "100%";
-            spentBar.style.position = "absolute";
-            spentBar.style.left = "0";
-            spentBar.style.top = "0";
-            spentBar.style.width = `${Math.min(actualPct, targetPct)}%`;
-            spentBar.style.backgroundColor = "var(--color-blue)";
-            spentBar.style.opacity = "0.8";
+            spentBar.setCssStyles({ "height": "100%" });
+            spentBar.setCssStyles({ "position": "absolute" });
+            spentBar.setCssStyles({ "left": "0" });
+            spentBar.setCssStyles({ "top": "0" });
+            spentBar.setCssStyles({ "width": `${Math.min(actualPct, targetPct)}%` });
+            spentBar.setCssStyles({ "backgroundColor": "var(--color-blue)" });
+            spentBar.setCssStyles({ "opacity": "0.8" });
 
             // Exceeded Bar (Red beyond target)
             if (aggregatedActual > aggregatedTarget) {
                 const exceededBar = barContainer.createEl("div");
-                exceededBar.style.height = "100%";
-                exceededBar.style.position = "absolute";
-                exceededBar.style.left = `${targetPct}%`;
-                exceededBar.style.top = "0";
-                exceededBar.style.width = `${actualPct - targetPct}%`;
-                exceededBar.style.backgroundColor = "var(--color-red)";
-                exceededBar.style.opacity = "0.8";
+                exceededBar.setCssStyles({ "height": "100%" });
+                exceededBar.setCssStyles({ "position": "absolute" });
+                exceededBar.setCssStyles({ "left": `${targetPct}%` });
+                exceededBar.setCssStyles({ "top": "0" });
+                exceededBar.setCssStyles({ "width": `${actualPct - targetPct}%` });
+                exceededBar.setCssStyles({ "backgroundColor": "var(--color-red)" });
+                exceededBar.setCssStyles({ "opacity": "0.8" });
                 
                 const exceedLabel = valuesRow.createEl("span", { text: `Exceeded: ${displayExceeded} ${currency}` });
-                exceedLabel.style.color = "var(--color-red)";
-                exceedLabel.style.fontWeight = "bold";
+                exceedLabel.setCssStyles({ "color": "var(--color-red)" });
+                exceedLabel.setCssStyles({ "fontWeight": "bold" });
             } else {
                 const remLabel = valuesRow.createEl("span", { text: `Remaining: ${displayRemaining} ${currency}` });
-                remLabel.style.color = "var(--text-muted)";
+                remLabel.setCssStyles({ "color": "var(--text-muted)" });
             }
 
             // Target Line
             const targetLine = barContainer.createEl("div");
-            targetLine.style.height = "100%";
-            targetLine.style.position = "absolute";
-            targetLine.style.left = `${targetPct}%`;
-            targetLine.style.top = "0";
-            targetLine.style.width = "2px";
-            targetLine.style.backgroundColor = "var(--text-normal)";
-            targetLine.style.zIndex = "2";
+            targetLine.setCssStyles({ "height": "100%" });
+            targetLine.setCssStyles({ "position": "absolute" });
+            targetLine.setCssStyles({ "left": `${targetPct}%` });
+            targetLine.setCssStyles({ "top": "0" });
+            targetLine.setCssStyles({ "width": "2px" });
+            targetLine.setCssStyles({ "backgroundColor": "var(--text-normal)" });
+            targetLine.setCssStyles({ "zIndex": "2" });
         }
     }
 
@@ -964,17 +964,17 @@ export class AccountingDashboardView extends ItemView {
 
         // Options toggle for charts
         const toggleRow = chartsContainer.createEl("div");
-        toggleRow.style.display = "flex";
-        toggleRow.style.justifyContent = "flex-end";
-        toggleRow.style.width = "100%";
+        toggleRow.setCssStyles({ "display": "flex" });
+        toggleRow.setCssStyles({ "justifyContent": "flex-end" });
+        toggleRow.setCssStyles({ "width": "100%" });
         
         const labelParams = toggleRow.createEl("label");
-        labelParams.style.display = "flex";
-        labelParams.style.alignItems = "center";
-        labelParams.style.gap = "8px";
-        labelParams.style.cursor = "pointer";
-        labelParams.style.fontSize = "0.9em";
-        labelParams.style.color = "var(--text-muted)";
+        labelParams.setCssStyles({ "display": "flex" });
+        labelParams.setCssStyles({ "alignItems": "center" });
+        labelParams.setCssStyles({ "gap": "8px" });
+        labelParams.setCssStyles({ "cursor": "pointer" });
+        labelParams.setCssStyles({ "fontSize": "0.9em" });
+        labelParams.setCssStyles({ "color": "var(--text-muted)" });
         
         const amntCb = labelParams.createEl("input", { type: "checkbox" });
         amntCb.checked = this.showChartAmounts;
@@ -1372,7 +1372,7 @@ export class AccountingDashboardView extends ItemView {
         headers.forEach(h => {
             const th = headerRow.createEl("th");
             th.setText(this.summarySortColumn === h ? `${h} ${this.summarySortOrder === 'asc' ? '↑' : '↓'}` : h);
-            th.style.cursor = "pointer";
+            th.setCssStyles({ "cursor": "pointer" });
             th.onclick = () => {
                 if (this.summarySortColumn === h) {
                     this.summarySortOrder = this.summarySortOrder === 'asc' ? 'desc' : 'asc';
@@ -1484,7 +1484,7 @@ export class AccountingDashboardView extends ItemView {
             const th = headerRow.createEl("th");
             if (h !== "Actions") {
                 th.setText(this.transactionSortColumn === h ? `${h} ${this.transactionSortOrder === 'asc' ? '↑' : '↓'}` : h);
-                th.style.cursor = "pointer";
+                th.setCssStyles({ "cursor": "pointer" });
                 th.onclick = () => {
                     if (this.transactionSortColumn === h) {
                         this.transactionSortOrder = this.transactionSortOrder === 'asc' ? 'desc' : 'asc';
@@ -1609,7 +1609,7 @@ export class AccountingDashboardView extends ItemView {
         const link = document.createElement("a");
         link.setAttribute("href", url);
         link.setAttribute("download", filename);
-        link.style.visibility = 'hidden';
+        link.setCssStyles({ "visibility": 'hidden' });
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -1711,25 +1711,25 @@ export class AccountingDashboardView extends ItemView {
 
         const importWrapper = tableContainer.createEl("div");
         importWrapper.addClass("accounting-import-wrapper");
-        importWrapper.style.padding = "20px";
+        importWrapper.setCssStyles({ "padding": "20px" });
 
         importWrapper.createEl("h3", { text: "Import CSV Data" });
 
         // Step 1: File Input
         const fileRow = importWrapper.createEl("div");
         fileRow.addClass("accounting-row");
-        fileRow.style.marginBottom = "20px";
+        fileRow.setCssStyles({ "marginBottom": "20px" });
         
         const fileInput = fileRow.createEl("input", { type: "file" });
         fileInput.accept = ".csv";
 
         const headerRow = importWrapper.createEl("div");
         headerRow.addClass("accounting-row");
-        headerRow.style.marginBottom = "20px";
+        headerRow.setCssStyles({ "marginBottom": "20px" });
         
         const delimiterLabel = headerRow.createEl("label");
         delimiterLabel.addClass("accounting-flex-item");
-        delimiterLabel.style.marginRight = "15px";
+        delimiterLabel.setCssStyles({ "marginRight": "15px" });
         delimiterLabel.createSpan({ text: "Delimiter: " });
         const delimiterSelect = delimiterLabel.createEl("select");
         delimiterSelect.addClass("dropdown");
@@ -1783,19 +1783,19 @@ export class AccountingDashboardView extends ItemView {
             importWrapper.createEl("h4", { text: "Map Columns" });
 
             const mappingGrid = importWrapper.createEl("div");
-            mappingGrid.style.display = "grid";
-            mappingGrid.style.gridTemplateColumns = "150px 1fr";
-            mappingGrid.style.gap = "10px";
-            mappingGrid.style.marginBottom = "20px";
-            mappingGrid.style.alignItems = "center";
+            mappingGrid.setCssStyles({ "display": "grid" });
+            mappingGrid.setCssStyles({ "gridTemplateColumns": "150px 1fr" });
+            mappingGrid.setCssStyles({ "gap": "10px" });
+            mappingGrid.setCssStyles({ "marginBottom": "20px" });
+            mappingGrid.setCssStyles({ "alignItems": "center" });
 
             const options: { value: string, text: string }[] = [{ value: "-1", text: "-- Select Column --" }];
             this.csvHeaders.forEach((h, i) => options.push({ value: i.toString(), text: h }));
 
             const createMappingRow = (key: keyof typeof this.csvMapping, label: string, required: boolean) => {
                 const titleSpan = mappingGrid.createEl("div", { text: label + (required ? " *" : "") });
-                titleSpan.style.fontWeight = "bold";
-                if (required) titleSpan.style.color = "var(--text-accent)";
+                titleSpan.setCssStyles({ "fontWeight": "bold" });
+                if (required) titleSpan.setCssStyles({ "color": "var(--text-accent)" });
                 
                 const select = mappingGrid.createEl("select");
                 select.addClass("dropdown");

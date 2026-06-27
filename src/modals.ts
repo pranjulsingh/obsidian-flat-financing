@@ -27,9 +27,9 @@ function setupKeyboardPadding(modal: Modal) {
             if (requiredSpaceBottom > keyboardTop) {
                 const offset = requiredSpaceBottom - keyboardTop;
                 
-                modal.modalEl.style.transition = "transform 0.3s ease-out";
+                modal.modalEl.setCssStyles({ "transition": "transform 0.3s ease-out" });
                 // Shift the entire modal box up
-                modal.modalEl.style.transform = `translateY(-${offset}px)`;
+                modal.modalEl.setCssStyles({ "transform": `translateY(-${offset}px)` });
             }
         }, 300); // 300ms allows the keyboard sliding animation to finish
     };
@@ -38,8 +38,8 @@ function setupKeyboardPadding(modal: Modal) {
         setTimeout(() => {
             // Only reset if focus has completely left the modal's inputs
             if (!modal.contentEl.contains(document.activeElement)) {
-                modal.modalEl.style.transition = "transform 0.3s ease-out";
-                modal.modalEl.style.transform = "";
+                modal.modalEl.setCssStyles({ "transition": "transform 0.3s ease-out" });
+                modal.modalEl.setCssStyles({ "transform": "" });
             }
         }, 100);
     };
@@ -52,7 +52,7 @@ function setupKeyboardPadding(modal: Modal) {
         modal.contentEl.removeEventListener('focusin', onFocus);
         modal.contentEl.removeEventListener('focusout', onBlur);
         // Reset transform on close just in case
-        modal.modalEl.style.transform = "";
+        modal.modalEl.setCssStyles({ "transform": "" });
         originalOnClose();
     };
 }
