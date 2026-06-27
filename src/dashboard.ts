@@ -492,7 +492,7 @@ export class AccountingDashboardView extends ItemView {
             const actionsTd = tr.createEl("td");
             actionsTd.addClass("accounting-dashboard-actionsTd-5");
             
-            const editBtn = new ButtonComponent(actionsTd)
+            new ButtonComponent(actionsTd)
                 .setIcon("pencil")
                 .setTooltip("Edit goal")
                 .onClick(() => {
@@ -505,7 +505,7 @@ export class AccountingDashboardView extends ItemView {
                     modal.open();
                 });
                 
-            const delBtn = new ButtonComponent(actionsTd)
+            new ButtonComponent(actionsTd)
                 .setIcon("trash")
                 .setTooltip("Delete goal")
                 .onClick(() => {
@@ -519,7 +519,7 @@ export class AccountingDashboardView extends ItemView {
                 });
 
             if (g.status !== 'Successful' && g.status !== 'Cancelled') {
-                const closeBtn = new ButtonComponent(actionsTd)
+                new ButtonComponent(actionsTd)
                     .setIcon("check-circle")
                     .setTooltip("Close goal")
                     .onClick(() => {
