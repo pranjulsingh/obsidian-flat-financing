@@ -332,3 +332,284 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, 
         padding: 10px 15px; 
     }
 }
+.accounting-dashboard-contentDiv-1 {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding-top: 10px;
+}
+
+.accounting-dashboard-headerRow-2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.accounting-dashboard-title-3 {
+    margin: 0;
+}
+
+.accounting-dashboard-emptyTd-4 {
+    text-align: center;
+}
+
+.accounting-dashboard-actionsTd-5 {
+    display: flex;
+    gap: 10px;
+}
+
+.accounting-dashboard-assetContainer-6 {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.accounting-dashboard-accDiv-7 {
+    padding: 15px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background-color: var(--background-secondary);
+}
+
+.accounting-dashboard-titleRow-8 {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.accounting-dashboard-inline-9 {
+    margin: 0;
+}
+
+.accounting-dashboard-balSpan-10 {
+    font-weight: bold;
+}
+
+.accounting-dashboard-barContainer-11 {
+    width: 100%;
+    height: 24px;
+    background-color: var(--background-primary);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+}
+
+.accounting-dashboard-seg-12 {
+    height: 100%;
+}
+
+.accounting-dashboard-seg-13 {
+    height: 100%;
+}
+
+.accounting-dashboard-seg-14 {
+    background-color: var(--color-green);
+}
+
+.accounting-dashboard-barContainer-15 {
+    border: 2px solid var(--color-red);
+}
+
+.accounting-dashboard-legendRow-16 {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    font-size: 0.9em;
+}
+
+.accounting-dashboard-lg-17 {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.accounting-dashboard-dot-18 {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.accounting-dashboard-freeLg-19 {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.accounting-dashboard-freeDot-20 {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.accounting-dashboard-freeText-21 {
+    color: var(--color-red);
+    font-weight: bold;
+}
+
+.accounting-dashboard-totalsDiv-22 {
+    margin-top: 20px;
+    padding: 15px;
+    border-top: 2px solid var(--background-modifier-border);
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+
+.accounting-dashboard-contentDiv-23 {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-top: 10px;
+}
+
+.accounting-dashboard-accDiv-24 {
+    padding: 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background-color: var(--background-secondary);
+}
+
+.accounting-dashboard-headerRow-25 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.accounting-dashboard-title-26 {
+    margin: 0;
+}
+
+.accounting-dashboard-controlGroup-27 {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.accounting-dashboard-targetInput-28 {
+    width: 80px;
+}
+
+.accounting-dashboard-valuesRow-29 {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.accounting-dashboard-barContainer-30 {
+    width: 100%;
+    height: 24px;
+    background-color: var(--background-primary);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.accounting-dashboard-spentBar-31 {
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.accounting-dashboard-spentBar-32 {
+    background-color: var(--color-blue);
+    opacity: 0.8;
+}
+
+.accounting-dashboard-exceededBar-33 {
+    height: 100%;
+    position: absolute;
+}
+
+.accounting-dashboard-exceededBar-34 {
+    top: 0;
+}
+
+.accounting-dashboard-exceededBar-35 {
+    background-color: var(--color-red);
+    opacity: 0.8;
+}
+
+.accounting-dashboard-exceedLabel-36 {
+    color: var(--color-red);
+    font-weight: bold;
+}
+
+.accounting-dashboard-remLabel-37 {
+    color: var(--text-muted);
+}
+
+.accounting-dashboard-targetLine-38 {
+    height: 100%;
+    position: absolute;
+}
+
+.accounting-dashboard-targetLine-39 {
+    top: 0;
+    width: 2px;
+    background-color: var(--text-normal);
+    z-index: 2;
+}
+
+.accounting-dashboard-toggleRow-40 {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.accounting-dashboard-labelParams-41 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: var(--text-muted);
+}
+
+.accounting-dashboard-th-42 {
+    cursor: pointer;
+}
+
+.accounting-dashboard-th-43 {
+    cursor: pointer;
+}
+
+.accounting-dashboard-link-44 {
+    visibility: hidden;
+}
+
+.accounting-dashboard-importWrapper-45 {
+    padding: 20px;
+}
+
+.accounting-dashboard-fileRow-46 {
+    margin-bottom: 20px;
+}
+
+.accounting-dashboard-headerRow-47 {
+    margin-bottom: 20px;
+}
+
+.accounting-dashboard-delimiterLabel-48 {
+    margin-right: 15px;
+}
+
+.accounting-dashboard-mappingGrid-49 {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.accounting-dashboard-titleSpan-50 {
+    font-weight: bold;
+}
+. a c c o u n t i n g - m o d a l - t r a n s i t i o n   {   t r a n s i t i o n :   t r a n s f o r m   0 . 3 s   e a s e - o u t ;   }  
+ 

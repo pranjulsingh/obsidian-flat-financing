@@ -404,19 +404,14 @@ export class AccountingDashboardView extends ItemView {
         tableContainer.empty();
 
         const contentDiv = tableContainer.createEl("div");
-        contentDiv.setCssStyles({ "display": "flex" });
-        contentDiv.setCssStyles({ "flexDirection": "column" });
-        contentDiv.setCssStyles({ "gap": "30px" });
-        contentDiv.setCssStyles({ "paddingTop": "10px" });
+        contentDiv.addClass("accounting-dashboard-contentDiv-1");
 
         // Header actions
         const headerRow = contentDiv.createEl("div");
-        headerRow.setCssStyles({ "display": "flex" });
-        headerRow.setCssStyles({ "justifyContent": "space-between" });
-        headerRow.setCssStyles({ "alignItems": "center" });
+        headerRow.addClass("accounting-dashboard-headerRow-2");
         
         const title = headerRow.createEl("h3", { text: "Savings Goals" });
-        title.setCssStyles({ "margin": "0" });
+        title.addClass("accounting-dashboard-title-3");
         
         new ButtonComponent(headerRow)
             .setButtonText("Create new goal")
@@ -480,7 +475,7 @@ export class AccountingDashboardView extends ItemView {
             const emptyTr = tbody.createEl("tr");
             const emptyTd = emptyTr.createEl("td", { text: "No savings goals created." });
             emptyTd.colSpan = headers.length;
-            emptyTd.setCssStyles({ "textAlign": "center" });
+            emptyTd.addClass("accounting-dashboard-emptyTd-4");
         }
 
         goalsWithProgress.forEach(g => {
@@ -496,8 +491,7 @@ export class AccountingDashboardView extends ItemView {
             tr.createEl("td", { text: `${g.timeToComplete} mos` });
             
             const actionsTd = tr.createEl("td");
-            actionsTd.setCssStyles({ "display": "flex" });
-            actionsTd.setCssStyles({ "gap": "10px" });
+            actionsTd.addClass("accounting-dashboard-actionsTd-5");
             
             const editBtn = new ButtonComponent(actionsTd)
                 .setIcon("pencil")
@@ -559,9 +553,7 @@ export class AccountingDashboardView extends ItemView {
         });
 
         const assetContainer = contentDiv.createEl("div");
-        assetContainer.setCssStyles({ "display": "flex" });
-        assetContainer.setCssStyles({ "flexDirection": "column" });
-        assetContainer.setCssStyles({ "gap": "20px" });
+        assetContainer.addClass("accounting-dashboard-assetContainer-6");
 
         for (const [account, currentBalance] of Object.entries(assetBalances)) {
             const accountGoals = goalsWithProgress.filter(g => g.linkedAccount === account && g.status !== 'Successful' && g.status !== 'Cancelled');
@@ -572,28 +564,17 @@ export class AccountingDashboardView extends ItemView {
             const freeBalance = currentBalance - totalReserved;
 
             const accDiv = assetContainer.createEl("div");
-            accDiv.setCssStyles({ "padding": "15px" });
-            accDiv.setCssStyles({ "border": "1px solid var(--background-modifier-border)" });
-            accDiv.setCssStyles({ "borderRadius": "8px" });
-            accDiv.setCssStyles({ "backgroundColor": "var(--background-secondary)" });
+            accDiv.addClass("accounting-dashboard-accDiv-7");
 
             const titleRow = accDiv.createEl("div");
-            titleRow.setCssStyles({ "display": "flex" });
-            titleRow.setCssStyles({ "justifyContent": "space-between" });
-            titleRow.setCssStyles({ "marginBottom": "10px" });
-            titleRow.createEl("h4", { text: account }).setCssStyles({ "margin": "0" });
+            titleRow.addClass("accounting-dashboard-titleRow-8");
+            titleRow.createEl("h4", { text: account }).addClass("accounting-dashboard-inline-9");
             
             const balSpan = titleRow.createEl("span", { text: `Balance: ${this.formatMoney(currentBalance)}` });
-            balSpan.setCssStyles({ "fontWeight": "bold" });
+            balSpan.addClass("accounting-dashboard-balSpan-10");
 
             const barContainer = accDiv.createEl("div");
-            barContainer.setCssStyles({ "width": "100%" });
-            barContainer.setCssStyles({ "height": "24px" });
-            barContainer.setCssStyles({ "backgroundColor": "var(--background-primary)" });
-            barContainer.setCssStyles({ "borderRadius": "4px" });
-            barContainer.setCssStyles({ "position": "relative" });
-            barContainer.setCssStyles({ "overflow": "hidden" });
-            barContainer.setCssStyles({ "display": "flex" });
+            barContainer.addClass("accounting-dashboard-barContainer-11");
 
             const maxVal = Math.max(currentBalance, totalReserved, 1);
             
@@ -609,7 +590,7 @@ export class AccountingDashboardView extends ItemView {
                 const pct = (g.reservedTillNow / maxVal) * 100;
                 if (pct > 0) {
                     const seg = barContainer.createEl("div");
-                    seg.setCssStyles({ "height": "100%" });
+                    seg.addClass("accounting-dashboard-seg-12");
                     seg.setCssStyles({ "width": `${pct}%` });
                     seg.setCssStyles({ "backgroundColor": colors[idx % colors.length] });
                     seg.title = `${g.text}: ${this.formatMoney(g.reservedTillNow)}`;
@@ -619,51 +600,38 @@ export class AccountingDashboardView extends ItemView {
             if (freeBalance > 0) {
                 const pct = (freeBalance / maxVal) * 100;
                 const seg = barContainer.createEl("div");
-                seg.setCssStyles({ "height": "100%" });
+                seg.addClass("accounting-dashboard-seg-13");
                 seg.setCssStyles({ "width": `${pct}%` });
-                seg.setCssStyles({ "backgroundColor": "var(--color-green)" });
+                seg.addClass("accounting-dashboard-seg-14");
                 seg.title = `Free Balance: ${this.formatMoney(freeBalance)}`;
             } else if (freeBalance < 0) {
-                barContainer.setCssStyles({ "border": "2px solid var(--color-red)" });
+                barContainer.addClass("accounting-dashboard-barContainer-15");
             }
 
             const legendRow = accDiv.createEl("div");
-            legendRow.setCssStyles({ "marginTop": "10px" });
-            legendRow.setCssStyles({ "display": "flex" });
-            legendRow.setCssStyles({ "flexWrap": "wrap" });
-            legendRow.setCssStyles({ "gap": "15px" });
-            legendRow.setCssStyles({ "fontSize": "0.9em" });
+            legendRow.addClass("accounting-dashboard-legendRow-16");
 
             accountGoals.forEach((g, idx) => {
                 const lg = legendRow.createEl("div");
-                lg.setCssStyles({ "display": "flex" });
-                lg.setCssStyles({ "alignItems": "center" });
-                lg.setCssStyles({ "gap": "5px" });
+                lg.addClass("accounting-dashboard-lg-17");
                 
                 const dot = lg.createEl("div");
-                dot.setCssStyles({ "width": "12px" });
-                dot.setCssStyles({ "height": "12px" });
-                dot.setCssStyles({ "borderRadius": "50%" });
+                dot.addClass("accounting-dashboard-dot-18");
                 dot.setCssStyles({ "backgroundColor": colors[idx % colors.length] });
                 
                 lg.createEl("span", { text: `${g.text}: ${this.formatMoney(g.reservedTillNow)}` });
             });
 
             const freeLg = legendRow.createEl("div");
-            freeLg.setCssStyles({ "display": "flex" });
-            freeLg.setCssStyles({ "alignItems": "center" });
-            freeLg.setCssStyles({ "gap": "5px" });
+            freeLg.addClass("accounting-dashboard-freeLg-19");
             
             const freeDot = freeLg.createEl("div");
-            freeDot.setCssStyles({ "width": "12px" });
-            freeDot.setCssStyles({ "height": "12px" });
-            freeDot.setCssStyles({ "borderRadius": "50%" });
+            freeDot.addClass("accounting-dashboard-freeDot-20");
             freeDot.setCssStyles({ "backgroundColor": freeBalance >= 0 ? "var(--color-green)" : "var(--color-red)" });
             
             const freeText = freeLg.createEl("span", { text: `Free Balance: ${this.formatMoney(freeBalance)}` });
             if (freeBalance < 0) {
-                freeText.setCssStyles({ "color": "var(--color-red)" });
-                freeText.setCssStyles({ "fontWeight": "bold" });
+                freeText.addClass("accounting-dashboard-freeText-21");
             }
         }
 
@@ -673,12 +641,7 @@ export class AccountingDashboardView extends ItemView {
         const globalTotalFree = globalTotalBalance - globalTotalReserved;
 
         const totalsDiv = contentDiv.createEl("div");
-        totalsDiv.setCssStyles({ "marginTop": "20px" });
-        totalsDiv.setCssStyles({ "padding": "15px" });
-        totalsDiv.setCssStyles({ "borderTop": "2px solid var(--background-modifier-border)" });
-        totalsDiv.setCssStyles({ "display": "flex" });
-        totalsDiv.setCssStyles({ "justifyContent": "space-between" });
-        totalsDiv.setCssStyles({ "fontWeight": "bold" });
+        totalsDiv.addClass("accounting-dashboard-totalsDiv-22");
 
         totalsDiv.createEl("span", { text: `Total Asset Balance: ${this.formatMoney(globalTotalBalance)}` });
         totalsDiv.createEl("span", { text: `Total Reserved: ${this.formatMoney(globalTotalReserved)}` });
@@ -737,10 +700,7 @@ export class AccountingDashboardView extends ItemView {
         const sortedAccounts = Array.from(expenseAccounts).sort();
         
         const contentDiv = tableContainer.createEl("div");
-        contentDiv.setCssStyles({ "display": "flex" });
-        contentDiv.setCssStyles({ "flexDirection": "column" });
-        contentDiv.setCssStyles({ "gap": "20px" });
-        contentDiv.setCssStyles({ "paddingTop": "10px" });
+        contentDiv.addClass("accounting-dashboard-contentDiv-23");
 
         const currency = this.plugin.settings.currencySymbol;
 
@@ -784,33 +744,23 @@ export class AccountingDashboardView extends ItemView {
 
             // Draw bullet chart for this account
             const accDiv = contentDiv.createEl("div");
-            accDiv.setCssStyles({ "padding": "10px" });
-            accDiv.setCssStyles({ "border": "1px solid var(--background-modifier-border)" });
-            accDiv.setCssStyles({ "borderRadius": "8px" });
-            accDiv.setCssStyles({ "backgroundColor": "var(--background-secondary)" });
+            accDiv.addClass("accounting-dashboard-accDiv-24");
 
             const headerRow = accDiv.createEl("div");
-            headerRow.setCssStyles({ "display": "flex" });
-            headerRow.setCssStyles({ "justifyContent": "space-between" });
-            headerRow.setCssStyles({ "alignItems": "center" });
-            headerRow.setCssStyles({ "marginBottom": "10px" });
-            headerRow.setCssStyles({ "flexWrap": "wrap" });
-            headerRow.setCssStyles({ "gap": "10px" });
+            headerRow.addClass("accounting-dashboard-headerRow-25");
 
             const title = headerRow.createEl("h4", { text: account });
-            title.setCssStyles({ "margin": "0" });
+            title.addClass("accounting-dashboard-title-26");
 
             // Controls to set target
             const controlGroup = headerRow.createEl("div");
-            controlGroup.setCssStyles({ "display": "flex" });
-            controlGroup.setCssStyles({ "gap": "10px" });
-            controlGroup.setCssStyles({ "alignItems": "center" });
+            controlGroup.addClass("accounting-dashboard-controlGroup-27");
 
             const monthInput = controlGroup.createEl("input", { type: "month" });
             monthInput.value = this.targetEndMonth; // default to end month
 
             const targetInput = controlGroup.createEl("input", { type: "number", placeholder: "Amount" });
-            targetInput.setCssStyles({ "width": "80px" });
+            targetInput.addClass("accounting-dashboard-targetInput-28");
 
             const saveBtn = controlGroup.createEl("button", { text: "Set Target" });
             saveBtn.onclick = async () => {
@@ -832,10 +782,7 @@ export class AccountingDashboardView extends ItemView {
 
             // Values row
             const valuesRow = accDiv.createEl("div");
-            valuesRow.setCssStyles({ "display": "flex" });
-            valuesRow.setCssStyles({ "justifyContent": "space-between" });
-            valuesRow.setCssStyles({ "fontSize": "0.9em" });
-            valuesRow.setCssStyles({ "marginBottom": "5px" });
+            valuesRow.addClass("accounting-dashboard-valuesRow-29");
 
             let displayActual = this.plugin.settings.hideBalances ? "***" : aggregatedActual.toFixed(2);
             let displayTarget = this.plugin.settings.hideBalances ? "***" : aggregatedTarget.toFixed(2);
@@ -847,12 +794,7 @@ export class AccountingDashboardView extends ItemView {
 
             // Bullet chart visualization
             const barContainer = accDiv.createEl("div");
-            barContainer.setCssStyles({ "width": "100%" });
-            barContainer.setCssStyles({ "height": "24px" });
-            barContainer.setCssStyles({ "backgroundColor": "var(--background-primary)" });
-            barContainer.setCssStyles({ "borderRadius": "4px" });
-            barContainer.setCssStyles({ "position": "relative" });
-            barContainer.setCssStyles({ "overflow": "hidden" });
+            barContainer.addClass("accounting-dashboard-barContainer-30");
 
             // Determine scales
             const maxVal = Math.max(aggregatedTarget, aggregatedActual, 1); // Avoid div by 0
@@ -862,42 +804,31 @@ export class AccountingDashboardView extends ItemView {
 
             // Spent Bar (Green/Blue up to target)
             const spentBar = barContainer.createEl("div");
-            spentBar.setCssStyles({ "height": "100%" });
-            spentBar.setCssStyles({ "position": "absolute" });
-            spentBar.setCssStyles({ "left": "0" });
-            spentBar.setCssStyles({ "top": "0" });
+            spentBar.addClass("accounting-dashboard-spentBar-31");
             spentBar.setCssStyles({ "width": `${Math.min(actualPct, targetPct)}%` });
-            spentBar.setCssStyles({ "backgroundColor": "var(--color-blue)" });
-            spentBar.setCssStyles({ "opacity": "0.8" });
+            spentBar.addClass("accounting-dashboard-spentBar-32");
 
             // Exceeded Bar (Red beyond target)
             if (aggregatedActual > aggregatedTarget) {
                 const exceededBar = barContainer.createEl("div");
-                exceededBar.setCssStyles({ "height": "100%" });
-                exceededBar.setCssStyles({ "position": "absolute" });
+                exceededBar.addClass("accounting-dashboard-exceededBar-33");
                 exceededBar.setCssStyles({ "left": `${targetPct}%` });
-                exceededBar.setCssStyles({ "top": "0" });
+                exceededBar.addClass("accounting-dashboard-exceededBar-34");
                 exceededBar.setCssStyles({ "width": `${actualPct - targetPct}%` });
-                exceededBar.setCssStyles({ "backgroundColor": "var(--color-red)" });
-                exceededBar.setCssStyles({ "opacity": "0.8" });
+                exceededBar.addClass("accounting-dashboard-exceededBar-35");
                 
                 const exceedLabel = valuesRow.createEl("span", { text: `Exceeded: ${displayExceeded} ${currency}` });
-                exceedLabel.setCssStyles({ "color": "var(--color-red)" });
-                exceedLabel.setCssStyles({ "fontWeight": "bold" });
+                exceedLabel.addClass("accounting-dashboard-exceedLabel-36");
             } else {
                 const remLabel = valuesRow.createEl("span", { text: `Remaining: ${displayRemaining} ${currency}` });
-                remLabel.setCssStyles({ "color": "var(--text-muted)" });
+                remLabel.addClass("accounting-dashboard-remLabel-37");
             }
 
             // Target Line
             const targetLine = barContainer.createEl("div");
-            targetLine.setCssStyles({ "height": "100%" });
-            targetLine.setCssStyles({ "position": "absolute" });
+            targetLine.addClass("accounting-dashboard-targetLine-38");
             targetLine.setCssStyles({ "left": `${targetPct}%` });
-            targetLine.setCssStyles({ "top": "0" });
-            targetLine.setCssStyles({ "width": "2px" });
-            targetLine.setCssStyles({ "backgroundColor": "var(--text-normal)" });
-            targetLine.setCssStyles({ "zIndex": "2" });
+            targetLine.addClass("accounting-dashboard-targetLine-39");
         }
     }
 
@@ -964,17 +895,10 @@ export class AccountingDashboardView extends ItemView {
 
         // Options toggle for charts
         const toggleRow = chartsContainer.createEl("div");
-        toggleRow.setCssStyles({ "display": "flex" });
-        toggleRow.setCssStyles({ "justifyContent": "flex-end" });
-        toggleRow.setCssStyles({ "width": "100%" });
+        toggleRow.addClass("accounting-dashboard-toggleRow-40");
         
         const labelParams = toggleRow.createEl("label");
-        labelParams.setCssStyles({ "display": "flex" });
-        labelParams.setCssStyles({ "alignItems": "center" });
-        labelParams.setCssStyles({ "gap": "8px" });
-        labelParams.setCssStyles({ "cursor": "pointer" });
-        labelParams.setCssStyles({ "fontSize": "0.9em" });
-        labelParams.setCssStyles({ "color": "var(--text-muted)" });
+        labelParams.addClass("accounting-dashboard-labelParams-41");
         
         const amntCb = labelParams.createEl("input", { type: "checkbox" });
         amntCb.checked = this.showChartAmounts;
@@ -1372,7 +1296,7 @@ export class AccountingDashboardView extends ItemView {
         headers.forEach(h => {
             const th = headerRow.createEl("th");
             th.setText(this.summarySortColumn === h ? `${h} ${this.summarySortOrder === 'asc' ? '↑' : '↓'}` : h);
-            th.setCssStyles({ "cursor": "pointer" });
+            th.addClass("accounting-dashboard-th-42");
             th.onclick = () => {
                 if (this.summarySortColumn === h) {
                     this.summarySortOrder = this.summarySortOrder === 'asc' ? 'desc' : 'asc';
@@ -1484,7 +1408,7 @@ export class AccountingDashboardView extends ItemView {
             const th = headerRow.createEl("th");
             if (h !== "Actions") {
                 th.setText(this.transactionSortColumn === h ? `${h} ${this.transactionSortOrder === 'asc' ? '↑' : '↓'}` : h);
-                th.setCssStyles({ "cursor": "pointer" });
+                th.addClass("accounting-dashboard-th-43");
                 th.onclick = () => {
                     if (this.transactionSortColumn === h) {
                         this.transactionSortOrder = this.transactionSortOrder === 'asc' ? 'desc' : 'asc';
@@ -1609,7 +1533,7 @@ export class AccountingDashboardView extends ItemView {
         const link = document.createElement("a");
         link.setAttribute("href", url);
         link.setAttribute("download", filename);
-        link.setCssStyles({ "visibility": 'hidden' });
+        link.addClass("accounting-dashboard-link-44");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -1711,25 +1635,25 @@ export class AccountingDashboardView extends ItemView {
 
         const importWrapper = tableContainer.createEl("div");
         importWrapper.addClass("accounting-import-wrapper");
-        importWrapper.setCssStyles({ "padding": "20px" });
+        importWrapper.addClass("accounting-dashboard-importWrapper-45");
 
         importWrapper.createEl("h3", { text: "Import CSV Data" });
 
         // Step 1: File Input
         const fileRow = importWrapper.createEl("div");
         fileRow.addClass("accounting-row");
-        fileRow.setCssStyles({ "marginBottom": "20px" });
+        fileRow.addClass("accounting-dashboard-fileRow-46");
         
         const fileInput = fileRow.createEl("input", { type: "file" });
         fileInput.accept = ".csv";
 
         const headerRow = importWrapper.createEl("div");
         headerRow.addClass("accounting-row");
-        headerRow.setCssStyles({ "marginBottom": "20px" });
+        headerRow.addClass("accounting-dashboard-headerRow-47");
         
         const delimiterLabel = headerRow.createEl("label");
         delimiterLabel.addClass("accounting-flex-item");
-        delimiterLabel.setCssStyles({ "marginRight": "15px" });
+        delimiterLabel.addClass("accounting-dashboard-delimiterLabel-48");
         delimiterLabel.createSpan({ text: "Delimiter: " });
         const delimiterSelect = delimiterLabel.createEl("select");
         delimiterSelect.addClass("dropdown");
@@ -1783,18 +1707,14 @@ export class AccountingDashboardView extends ItemView {
             importWrapper.createEl("h4", { text: "Map Columns" });
 
             const mappingGrid = importWrapper.createEl("div");
-            mappingGrid.setCssStyles({ "display": "grid" });
-            mappingGrid.setCssStyles({ "gridTemplateColumns": "150px 1fr" });
-            mappingGrid.setCssStyles({ "gap": "10px" });
-            mappingGrid.setCssStyles({ "marginBottom": "20px" });
-            mappingGrid.setCssStyles({ "alignItems": "center" });
+            mappingGrid.addClass("accounting-dashboard-mappingGrid-49");
 
             const options: { value: string, text: string }[] = [{ value: "-1", text: "-- Select Column --" }];
             this.csvHeaders.forEach((h, i) => options.push({ value: i.toString(), text: h }));
 
             const createMappingRow = (key: keyof typeof this.csvMapping, label: string, required: boolean) => {
                 const titleSpan = mappingGrid.createEl("div", { text: label + (required ? " *" : "") });
-                titleSpan.setCssStyles({ "fontWeight": "bold" });
+                titleSpan.addClass("accounting-dashboard-titleSpan-50");
                 if (required) titleSpan.setCssStyles({ "color": "var(--text-accent)" });
                 
                 const select = mappingGrid.createEl("select");
@@ -1959,4 +1879,4 @@ export class AccountingDashboardView extends ItemView {
             void this.refresh(true);
         }
     }
-}
+}

@@ -27,7 +27,7 @@ function setupKeyboardPadding(modal: Modal) {
             if (requiredSpaceBottom > keyboardTop) {
                 const offset = requiredSpaceBottom - keyboardTop;
                 
-                modal.modalEl.setCssStyles({ "transition": "transform 0.3s ease-out" });
+                modal.modalEl.addClass("accounting-modal-transition");
                 // Shift the entire modal box up
                 modal.modalEl.setCssStyles({ "transform": `translateY(-${offset}px)` });
             }
@@ -38,8 +38,8 @@ function setupKeyboardPadding(modal: Modal) {
         setTimeout(() => {
             // Only reset if focus has completely left the modal's inputs
             if (!modal.contentEl.contains(document.activeElement)) {
-                modal.modalEl.setCssStyles({ "transition": "transform 0.3s ease-out" });
-                modal.modalEl.setCssStyles({ "transform": "" });
+                modal.modalEl.addClass("accounting-modal-transition");
+                modal.modalEl.style.removeProperty("transform");
             }
         }, 100);
     };
@@ -52,7 +52,7 @@ function setupKeyboardPadding(modal: Modal) {
         modal.contentEl.removeEventListener('focusin', onFocus);
         modal.contentEl.removeEventListener('focusout', onBlur);
         // Reset transform on close just in case
-        modal.modalEl.setCssStyles({ "transform": "" });
+        modal.modalEl.style.removeProperty("transform");
         originalOnClose();
     };
 }
@@ -774,4 +774,4 @@ export class CloseGoalModal extends Modal {
     onClose() {
         this.contentEl.empty();
     }
-}
+}
