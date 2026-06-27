@@ -183,8 +183,9 @@
     background-color: var(--background-modifier-hover);
 }
 
-.accounting-align-right {
-    text-align: right !important;
+.accounting-table th.accounting-align-right,
+.accounting-table td.accounting-align-right {
+    text-align: right;
 }
 
 .accounting-table-footer td {
