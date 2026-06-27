@@ -611,5 +611,7 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, 
 .accounting-dashboard-titleSpan-50 {
     font-weight: bold;
 }
-. a c c o u n t i n g - m o d a l - t r a n s i t i o n   {   t r a n s i t i o n :   t r a n s f o r m   0 . 3 s   e a s e - o u t ;   }  
- 
+
+.accounting-modal-transition {
+    transition: transform 0.3s ease-out;
+}
