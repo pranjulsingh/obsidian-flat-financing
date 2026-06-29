@@ -199,7 +199,7 @@ export class Ledger {
         return sum;
     }
 
-    getBalances(startDate: string, endDate: string, settings?: any): Balance[] {
+    getBalances(startDate: string, endDate: string, settings?: unknown): Balance[] {
         const results: Map<string, Balance> = new Map();
 
         // Initialize all known accounts
@@ -295,7 +295,7 @@ export class Ledger {
         return finalResults;
     }
 
-    getTransactions(startDate: string, endDate: string, settings?: any): Transaction[] {
+    getTransactions(startDate: string, endDate: string, settings?: unknown): Transaction[] {
         return this.transactions.filter(t => {
             if (t.date < startDate || t.date > endDate) return false;
             return true;

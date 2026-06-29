@@ -85,7 +85,7 @@ export class AccountingDashboardView extends ItemView {
     }
 
     matchesWildcard(text: string, pattern: string): boolean {
-        const escapeRegex = (s: string) => s.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+        const escapeRegex = (s: string) => s.replace(/([.*+?^=!:${}()|[\]\\])/g, "\\$1");
         // Replace wildcard * with regex .* and ? with .
         const regexStr = "^" + pattern.split("*").map(escapeRegex).join(".*").replace(/\\\?/g, ".") + "$";
         return new RegExp(regexStr).test(text);
@@ -417,7 +417,7 @@ export class AccountingDashboardView extends ItemView {
             .setCta()
             .onClick(() => {
                 const modal = new GoalModal(this.app, this.plugin);
-                const originalOnClose = modal.onClose.bind(modal);
+                const originalOnClose = modal.onClose.bind(modal) as () => void;
                 modal.onClose = () => {
                     originalOnClose();
                     this.renderSavingsGoalView(container);
@@ -497,7 +497,7 @@ export class AccountingDashboardView extends ItemView {
                 .setTooltip("Edit goal")
                 .onClick(() => {
                     const modal = new GoalModal(this.app, this.plugin, g);
-                    const originalOnClose = modal.onClose.bind(modal);
+                    const originalOnClose = modal.onClose.bind(modal) as () => void;
                     modal.onClose = () => {
                         originalOnClose();
                         this.renderSavingsGoalView(container);
@@ -510,7 +510,7 @@ export class AccountingDashboardView extends ItemView {
                 .setTooltip("Delete goal")
                 .onClick(() => {
                     const modal = new DeleteGoalModal(this.app, this.plugin, g);
-                    const originalOnClose = modal.onClose.bind(modal);
+                    const originalOnClose = modal.onClose.bind(modal) as () => void;
                     modal.onClose = () => {
                         originalOnClose();
                         this.renderSavingsGoalView(container);
@@ -524,7 +524,7 @@ export class AccountingDashboardView extends ItemView {
                     .setTooltip("Close goal")
                     .onClick(() => {
                         const modal = new CloseGoalModal(this.app, this.plugin, g);
-                        const originalOnClose = modal.onClose.bind(modal);
+                        const originalOnClose = modal.onClose.bind(modal) as () => void;
                         modal.onClose = () => {
                             originalOnClose();
                             this.renderSavingsGoalView(container);
@@ -590,7 +590,7 @@ export class AccountingDashboardView extends ItemView {
                 if (pct > 0) {
                     const seg = barContainer.createEl("div");
                     seg.addClass("accounting-dashboard-seg-12");
-                    seg.setCssStyles({ "width": `${pct}%` });
+                    seg.style.width = `${pct}%`;
                     seg.setCssStyles({ "backgroundColor": colors[idx % colors.length] });
                     seg.title = `${g.text}: ${this.formatMoney(g.reservedTillNow)}`;
                 }
@@ -616,7 +616,7 @@ export class AccountingDashboardView extends ItemView {
                 
                 const dot = lg.createEl("div");
                 dot.addClass("accounting-dashboard-dot-18");
-                dot.setCssStyles({ "backgroundColor": colors[idx % colors.length] });
+                dot.style.backgroundColor = colors[idx % colors.length];
                 
                 lg.createEl("span", { text: `${g.text}: ${this.formatMoney(g.reservedTillNow)}` });
             });
@@ -626,7 +626,7 @@ export class AccountingDashboardView extends ItemView {
             
             const freeDot = freeLg.createEl("div");
             freeDot.addClass("accounting-dashboard-freeDot-20");
-            freeDot.setCssStyles({ "backgroundColor": freeBalance >= 0 ? "var(--color-green)" : "var(--color-red)" });
+            freeDot.style.backgroundColor = freeBalance >= 0 ? "var(--color-green)" : "var(--color-red)";
             
             const freeText = freeLg.createEl("span", { text: `Free Balance: ${this.formatMoney(freeBalance)}` });
             if (freeBalance < 0) {
@@ -646,7 +646,7 @@ export class AccountingDashboardView extends ItemView {
         totalsDiv.createEl("span", { text: `Total Reserved: ${this.formatMoney(globalTotalReserved)}` });
         
         const freeTotalSpan = totalsDiv.createEl("span", { text: `Total Free Balance: ${this.formatMoney(globalTotalFree)}` });
-        if (globalTotalFree < 0) freeTotalSpan.setCssStyles({ "color": "var(--color-red)" });
+        if (globalTotalFree < 0) freeTotalSpan.addClass("accounting-negative-color");
     }
 
     renderExpenseTargetView(container: HTMLElement) {
@@ -804,7 +804,7 @@ export class AccountingDashboardView extends ItemView {
             // Spent Bar (Green/Blue up to target)
             const spentBar = barContainer.createEl("div");
             spentBar.addClass("accounting-dashboard-spentBar-31");
-            spentBar.setCssStyles({ "width": `${Math.min(actualPct, targetPct)}%` });
+            spentBar.style.width = `${Math.min(actualPct, targetPct)}%`;
             spentBar.addClass("accounting-dashboard-spentBar-32");
 
             // Exceeded Bar (Red beyond target)
@@ -826,7 +826,7 @@ export class AccountingDashboardView extends ItemView {
             // Target Line
             const targetLine = barContainer.createEl("div");
             targetLine.addClass("accounting-dashboard-targetLine-38");
-            targetLine.setCssStyles({ "left": `${targetPct}%` });
+            targetLine.style.left = `${targetPct}%`;
             targetLine.addClass("accounting-dashboard-targetLine-39");
         }
     }
@@ -947,12 +947,13 @@ export class AccountingDashboardView extends ItemView {
                     legend: { display: this.showChartAmounts, position: 'right' },
                     tooltip: {
                         callbacks: {
-                            label: (context: any) => {
+                            label: (ctx: unknown) => {
+                                const context = ctx as { label: string, raw: unknown, dataset: { data: unknown[] } };
                                 let baseLabel = context.label.split(' [')[0];
                                 if (!this.plugin.settings.hideBalances) {
                                     return `${baseLabel}: ${(context.raw as number).toFixed(2)} ${currency}`;
                                 }
-                                const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                                const total = (context.dataset.data as number[]).reduce((a: number, b: number) => a + b, 0);
                                 const percentage = total > 0 ? (((context.raw as number) / total) * 100).toFixed(1) + "%" : "0%";
                                 return `${baseLabel}: ${percentage}`;
                             }
@@ -1015,8 +1016,8 @@ export class AccountingDashboardView extends ItemView {
             if (!dateMap[date].assetImpacts) dateMap[date].assetImpacts = {};
             t.postings.forEach(p => {
                 if (assetAccounts.includes(p.account)) {
-                    if (!dateMap[date].assetImpacts![p.account]) dateMap[date].assetImpacts![p.account] = 0;
-                    dateMap[date].assetImpacts![p.account] += p.amount;
+                    if (!dateMap[date].assetImpacts[p.account]) dateMap[date].assetImpacts[p.account] = 0;
+                    dateMap[date].assetImpacts[p.account] += p.amount;
                 }
             });
 
@@ -1104,7 +1105,7 @@ export class AccountingDashboardView extends ItemView {
                     title: { display: true, text: 'Income vs Expense' },
                     tooltip: {
                         callbacks: {
-                            label: (context: any) => {
+                            label: (context) => {
                                 if (this.plugin.settings.hideBalances) {
                                     return `${context.dataset.label}: ***`;
                                 }
@@ -1151,7 +1152,7 @@ export class AccountingDashboardView extends ItemView {
                     title: { display: true, text: 'Date-wise Net Worth' },
                     tooltip: {
                         callbacks: {
-                            label: (context: any) => {
+                            label: (context) => {
                                 if (this.plugin.settings.hideBalances) {
                                     return `${context.dataset.label}: ***`;
                                 }
@@ -1195,7 +1196,7 @@ export class AccountingDashboardView extends ItemView {
                     title: { display: true, text: 'Cumulative Expenses' },
                     tooltip: {
                         callbacks: {
-                            label: (context: any) => {
+                            label: (context) => {
                                 if (this.plugin.settings.hideBalances) return `${context.dataset.label}: ***`;
                                 return `${context.dataset.label}: ${(context.raw as number).toFixed(2)} ${currency}`;
                             }
@@ -1529,13 +1530,13 @@ export class AccountingDashboardView extends ItemView {
         csvContent += rows.map(e => e.map(cell => `"${cell.replace(/"/g, '""')}"`).join(",")).join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
+        const link = activeDocument.createElement("a");
         link.setAttribute("href", url);
         link.setAttribute("download", filename);
         link.addClass("accounting-dashboard-link-44");
-        document.body.appendChild(link);
+        activeDocument.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        activeDocument.body.removeChild(link);
     }
 
     private async downloadMarkdown(prefix: string, headers: string[], rows: string[][]) {
@@ -1687,8 +1688,9 @@ export class AccountingDashboardView extends ItemView {
             this.renderImportView(container);
         };
 
-        fileInput.onchange = (e: any) => {
-            const file = e.target.files[0];
+        fileInput.onchange = (e: Event) => {
+            const target = e.target as HTMLInputElement;
+            const file = target.files?.[0];
             if (!file) return;
 
             const reader = new FileReader();
@@ -1714,14 +1716,14 @@ export class AccountingDashboardView extends ItemView {
             const createMappingRow = (key: keyof typeof this.csvMapping, label: string, required: boolean) => {
                 const titleSpan = mappingGrid.createEl("div", { text: label + (required ? " *" : "") });
                 titleSpan.addClass("accounting-dashboard-titleSpan-50");
-                if (required) titleSpan.setCssStyles({ "color": "var(--text-accent)" });
+                if (required) titleSpan.addClass("accounting-required-color");
                 
                 const select = mappingGrid.createEl("select");
                 select.addClass("dropdown");
                 options.forEach(opt => select.createEl("option", { value: opt.value, text: opt.text }));
                 
                 if (this.csvMapping[key] !== null) {
-                    select.value = this.csvMapping[key]!.toString();
+                    select.value = this.csvMapping[key].toString();
                 }
 
                 select.onchange = () => {

@@ -616,3 +616,11 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, 
 .accounting-modal-transition {
     transition: transform 0.3s ease-out;
 }
+
+.accounting-negative-color {
+    color: var(--color-red);
+}
+
+.accounting-required-color {
+    color: var(--text-accent);
+}

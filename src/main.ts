@@ -86,7 +86,7 @@ export default class ObsidianAccountingPlugin extends Plugin {
     }
 
     async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData()) as AccountingPluginSettings;
     }
 
     async saveSettings() {

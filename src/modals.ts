@@ -6,7 +6,7 @@ import { SavingsGoal } from "./settings";
 
 function setupKeyboardPadding(modal: Modal) {
     const onFocus = (e: Event) => {
-        setTimeout(() => {
+        window.setTimeout(() => {
             const target = e.target as HTMLElement;
             if (!target) return;
 
@@ -29,15 +29,15 @@ function setupKeyboardPadding(modal: Modal) {
                 
                 modal.modalEl.addClass("accounting-modal-transition");
                 // Shift the entire modal box up
-                modal.modalEl.setCssStyles({ "transform": `translateY(-${offset}px)` });
+                modal.modalEl.style.transform = `translateY(-${offset}px)`;
             }
         }, 300); // 300ms allows the keyboard sliding animation to finish
     };
 
     const onBlur = () => {
-        setTimeout(() => {
+        window.setTimeout(() => {
             // Only reset if focus has completely left the modal's inputs
-            if (!modal.contentEl.contains(document.activeElement)) {
+            if (!modal.contentEl.contains(activeDocument.activeElement)) {
                 modal.modalEl.addClass("accounting-modal-transition");
                 modal.modalEl.style.removeProperty("transform");
             }
@@ -47,7 +47,7 @@ function setupKeyboardPadding(modal: Modal) {
     modal.contentEl.addEventListener('focusin', onFocus);
     modal.contentEl.addEventListener('focusout', onBlur);
     
-    const originalOnClose = modal.onClose.bind(modal);
+    const originalOnClose = modal.onClose.bind(modal) as () => void;
     modal.onClose = () => {
         modal.contentEl.removeEventListener('focusin', onFocus);
         modal.contentEl.removeEventListener('focusout', onBlur);
@@ -559,7 +559,7 @@ export class DeleteTransactionModal extends Modal {
                 .onClick(() => this.close()))
             .addButton(btn => btn
                 .setButtonText("Delete")
-                .setDestructive()
+                .setWarning()
                 .onClick(async () => {
                     if (this.transaction.lineStart === undefined || this.transaction.lineEnd === undefined) {
                         new Notice("Error: Cannot find transaction location in file.");
@@ -713,7 +713,7 @@ export class DeleteGoalModal extends Modal {
                 .onClick(() => this.close()))
             .addButton(btn => btn
                 .setButtonText("Delete")
-                .setDestructive()
+                .setWarning()
                 .onClick(async () => {
                     this.plugin.settings.savingsGoals = this.plugin.settings.savingsGoals.filter(g => g.id !== this.goal.id);
                     await this.plugin.saveSettings();
