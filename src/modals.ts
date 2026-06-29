@@ -559,7 +559,7 @@ export class DeleteTransactionModal extends Modal {
                 .onClick(() => this.close()))
             .addButton(btn => btn
                 .setButtonText("Delete")
-                .setWarning()
+                .setDestructive()
                 .onClick(async () => {
                     if (this.transaction.lineStart === undefined || this.transaction.lineEnd === undefined) {
                         new Notice("Error: Cannot find transaction location in file.");
@@ -713,7 +713,7 @@ export class DeleteGoalModal extends Modal {
                 .onClick(() => this.close()))
             .addButton(btn => btn
                 .setButtonText("Delete")
-                .setWarning()
+                .setDestructive()
                 .onClick(async () => {
                     this.plugin.settings.savingsGoals = this.plugin.settings.savingsGoals.filter(g => g.id !== this.goal.id);
                     await this.plugin.saveSettings();

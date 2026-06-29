@@ -591,7 +591,7 @@ export class AccountingDashboardView extends ItemView {
                     const seg = barContainer.createEl("div");
                     seg.addClass("accounting-dashboard-seg-12");
                     seg.style.width = `${pct}%`;
-                    seg.setCssStyles({ "backgroundColor": colors[idx % colors.length] });
+                    seg.style.backgroundColor = colors[idx % colors.length];
                     seg.title = `${g.text}: ${this.formatMoney(g.reservedTillNow)}`;
                 }
             });
@@ -600,7 +600,7 @@ export class AccountingDashboardView extends ItemView {
                 const pct = (freeBalance / maxVal) * 100;
                 const seg = barContainer.createEl("div");
                 seg.addClass("accounting-dashboard-seg-13");
-                seg.setCssStyles({ "width": `${pct}%` });
+                seg.style.width = `${pct}%`;
                 seg.addClass("accounting-dashboard-seg-14");
                 seg.title = `Free Balance: ${this.formatMoney(freeBalance)}`;
             } else if (freeBalance < 0) {
@@ -811,9 +811,9 @@ export class AccountingDashboardView extends ItemView {
             if (aggregatedActual > aggregatedTarget) {
                 const exceededBar = barContainer.createEl("div");
                 exceededBar.addClass("accounting-dashboard-exceededBar-33");
-                exceededBar.setCssStyles({ "left": `${targetPct}%` });
+                exceededBar.style.left = `${targetPct}%`;
                 exceededBar.addClass("accounting-dashboard-exceededBar-34");
-                exceededBar.setCssStyles({ "width": `${actualPct - targetPct}%` });
+                exceededBar.style.width = `${actualPct - targetPct}%`;
                 exceededBar.addClass("accounting-dashboard-exceededBar-35");
                 
                 const exceedLabel = valuesRow.createEl("span", { text: `Exceeded: ${displayExceeded} ${currency}` });
