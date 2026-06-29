@@ -1,5 +1,5 @@
 import { App, Modal, Setting, Notice } from "obsidian";
-import ObsidianAccountingPlugin from "./main";
+import type ObsidianAccountingPlugin from "./main";
 import { AccountSuggest } from "./suggester";
 import { Transaction } from "./ledger";
 import { SavingsGoal } from "./settings";

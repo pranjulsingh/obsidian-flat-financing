@@ -1,5 +1,5 @@
 import { ItemView, WorkspaceLeaf, Setting, ButtonComponent, Notice } from "obsidian";
-import ObsidianAccountingPlugin from "./main";
+import type ObsidianAccountingPlugin from "./main";
 import { Ledger } from "./ledger";
 import { AccountSuggest } from "./suggester";
 import { EditTransactionModal, DeleteTransactionModal, GoalModal, DeleteGoalModal, CloseGoalModal } from "./modals";

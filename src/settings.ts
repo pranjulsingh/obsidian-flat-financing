@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import ObsidianAccountingPlugin from "./main";
+import type ObsidianAccountingPlugin from "./main";
 
 export interface SavingsGoal {
     id: string;
